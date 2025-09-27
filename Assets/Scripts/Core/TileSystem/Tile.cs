@@ -116,53 +116,10 @@ namespace ColorChain.Core
             };
         }
 
-        private void OnMouseDown()
-        {
-            if (_isActive && GameStateManager.IsGameActive)
-            {
-                HandleTileClick();
-            }
-        }
-
-        private void Update()
-        {
-            // Handle touch input for mobile devices
-            HandleTouchInput();
-        }
-
-        private void HandleTouchInput()
+        public void HandleTileClick()
         {
             if (!_isActive || !GameStateManager.IsGameActive) return;
 
-            // Check for touch input
-            if (Input.touchCount > 0)
-            {
-                Touch touch = Input.GetTouch(0);
-
-                if (touch.phase == TouchPhase.Began)
-                {
-                    Vector3 touchWorldPos = Camera.main.ScreenToWorldPoint(touch.position);
-                    touchWorldPos.z = 0f; // Ensure z is 0 for 2D
-
-                    // Check if touch is within this tile's bounds
-                    if (IsTouchWithinBounds(touchWorldPos))
-                    {
-                        HandleTileClick();
-                    }
-                }
-            }
-        }
-
-        private bool IsTouchWithinBounds(Vector3 worldPosition)
-        {
-            if (_tileCollider == null) return false;
-
-            // Use collider bounds to check if touch is within tile
-            return _tileCollider.bounds.Contains(worldPosition);
-        }
-
-        private void HandleTileClick()
-        {
             Debug.Log($"Tile clicked at ({x}, {y}) with color {_tileColor}");
             OnTileClicked?.Invoke(this);
         }

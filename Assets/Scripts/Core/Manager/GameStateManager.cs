@@ -1,13 +1,15 @@
 using System;
+using UnityEngine;
 
 namespace ColorChain.Core
 {
     public static class GameStateManager
     {
+        public const float TIME_LIMIT = 60f;
+
         private static GameState _currentState = GameState.MainMenu;
-        private static float _timer = 60f;
+        private static float _timer = TIME_LIMIT;
         private static bool _isGameActive = false;
-        private static float _gameTimeLimit = 60f;
 
         public static GameState CurrentState => _currentState;
         public static float GameTimer => _timer;
@@ -21,7 +23,7 @@ namespace ColorChain.Core
         public static void Initialize()
         {
             _currentState = GameState.MainMenu;
-            _timer = _gameTimeLimit;
+            _timer = TIME_LIMIT;
             _isGameActive = false;
         }
 
@@ -42,11 +44,13 @@ namespace ColorChain.Core
         public static void StartGame()
         {
             _currentState = GameState.Playing;
-            _timer = _gameTimeLimit;
+            _timer = TIME_LIMIT;
             _isGameActive = true;
 
             OnStateChanged?.Invoke(_currentState);
             OnGameStarted?.Invoke();
+
+            Debug.Log("Game Started");
         }
 
         public static void PauseGame()

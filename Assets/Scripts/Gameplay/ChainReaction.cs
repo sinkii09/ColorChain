@@ -10,7 +10,6 @@ namespace ColorChain.GamePlay
         private float _chainDelay = 0.1f;
 
         private TileGrid _tileGrid;
-        //private ScoreManager _scoreManager;
 
         public ChainReaction(TileGrid tileGrid, int minChainSize = 2, float chainDelay = 0.1f)
         {

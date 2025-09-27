@@ -7,6 +7,7 @@ namespace ColorChain.GamePlay
     {
         [Header("Game Components")]
         [SerializeField] private TileGrid _tileGrid;
+        [SerializeField] private InputManager _inputManager;
 
         [Header("Gameplay Settings")]
         [SerializeField] private int _minChainSize = 2;
@@ -42,6 +43,17 @@ namespace ColorChain.GamePlay
             if (_tileGrid == null)
             {
                 _tileGrid = FindAnyObjectByType<TileGrid>();
+            }
+
+            if (_inputManager == null)
+            {
+                _inputManager = FindAnyObjectByType<InputManager>();
+                if (_inputManager == null)
+                {
+                    // Create InputManager if it doesn't exist
+                    GameObject inputManagerGO = new GameObject("InputManager");
+                    _inputManager = inputManagerGO.AddComponent<InputManager>();
+                }
             }
         }
 
