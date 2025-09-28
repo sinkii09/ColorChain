@@ -16,6 +16,7 @@ namespace ColorChain.Core
 
         [Header("Tile Configuration")]
         [SerializeField] private Tile tilePrefab;
+        [SerializeField] private TileColorData tileColorData;
         [SerializeField] private float _tileSpacing = 1.1f;
         [SerializeField] private Vector3 _gridOffset = Vector3.zero;
 
@@ -68,7 +69,7 @@ namespace ColorChain.Core
                     Tile tile = Instantiate(tilePrefab, worldPos, Quaternion.identity, transform);
                     tiles[x, y] = tile;
 
-                    tile.Initialize(x, y, GetRandomColor());
+                    tile.Initialize(x, y, GetRandomColor(), tileColorData);
                 }
             }
         }
@@ -81,6 +82,12 @@ namespace ColorChain.Core
                 {
                     if (tiles[x, y] != null)
                     {
+                        // Ensure tile has the color data reference
+                        if (tileColorData != null)
+                        {
+                            tiles[x, y].SetTileColorData(tileColorData);
+                        }
+
                         tiles[x, y].SetTileColor(GetRandomColor());
                     }
                 }
@@ -138,6 +145,28 @@ namespace ColorChain.Core
         public void ResetGrid()
         {
             RandomizeColors();
+        }
+
+        public void RegenerateTiles(List<Tile> tilesToRegenerate)
+        {
+            foreach (var tile in tilesToRegenerate)
+            {
+                if (tile != null)
+                {
+                    // Ensure tile has the color data reference
+                    if (tileColorData != null)
+                    {
+                        tile.SetTileColorData(tileColorData);
+                    }
+
+                    // Reactivate the tile with a new random color
+                    tile.SetTileColor(GetRandomColor());
+                    tile.SetActive(true);
+
+                    // Play regeneration effect if needed
+                    tile.PlayActivationEffect();
+                }
+            }
         }
 
         public void ClearGrid()

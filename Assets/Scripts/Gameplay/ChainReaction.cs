@@ -1,4 +1,5 @@
 using ColorChain.Core;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,6 +11,9 @@ namespace ColorChain.GamePlay
         private float _chainDelay = 0.1f;
 
         private TileGrid _tileGrid;
+
+        // Event to notify when chain is completed and tiles need regeneration
+        public Action<List<Tile>> OnChainCompleted;
 
         public ChainReaction(TileGrid tileGrid, int minChainSize = 2, float chainDelay = 0.1f)
         {
@@ -72,16 +76,25 @@ namespace ColorChain.GamePlay
             // 1. Calculate and award score
             ScoreManager.AddChainScore(chainTiles.Count);
 
-            // 2. Deactivate tiles
+            // 2. Play deactivation effects
+            foreach (var tile in chainTiles)
+            {
+                tile.PlayDeactivationEffect();
+            }
+
+            // 3. Deactivate tiles
             foreach (var tile in chainTiles)
             {
                 tile.SetActive(false);
             }
 
-            // 3. Play effects
+            // 4. Play chain effects
             PlayChainEffects(chainTiles);
 
-            // 4. Check for game over conditions
+            // 5. Notify that chain is completed - regeneration will be handled by GameplayManager
+            OnChainCompleted?.Invoke(chainTiles);
+
+            // 6. Check for game over conditions
             // TODO: Add game over logic if needed
         }
 

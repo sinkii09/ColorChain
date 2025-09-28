@@ -15,6 +15,9 @@ namespace ColorChain.Core
         [SerializeField] private SpriteRenderer _spriteRenderer;
         [SerializeField] private Collider2D _tileCollider;
 
+        [Header("Visual Configuration")]
+        [SerializeField] private TileColorData _tileColorData;
+
         public bool IsActive => _isActive;
         public TileColor TileColor => _tileColor;
 
@@ -60,11 +63,25 @@ namespace ColorChain.Core
             }
         }
 
-        public void Initialize(int gridX, int gridY, TileColor color)
+        public void Initialize(int gridX, int gridY, TileColor color, TileColorData colorData = null)
         {
             SetTilePos(gridX, gridY);
+            if (colorData != null)
+            {
+                SetTileColorData(colorData);
+            }
             SetTileColor(color);
             _isActive = true;
+        }
+
+        public void SetTileColorData(TileColorData colorData)
+        {
+            _tileColorData = colorData;
+            // Update visuals if we already have a color set
+            if (_tileColor != TileColor.Red || _spriteRenderer != null)
+            {
+                UpdateVisualColor();
+            }
         }
 
         public void SetWorldPos(Vector3 worldPos)
@@ -97,13 +114,38 @@ namespace ColorChain.Core
 
         private void UpdateVisualColor()
         {
-            if (_spriteRenderer != null)
+            if (_spriteRenderer != null && _tileColorData != null)
             {
-                _spriteRenderer.color = GetColorFromTileColor(_tileColor);
+                // Set the sprite for this tile color
+                Sprite tileSprite = _tileColorData.GetSpriteForColor(_tileColor);
+                if (tileSprite != null)
+                {
+                    _spriteRenderer.sprite = tileSprite;
+                }
+
+                // Apply overlay color (tint) if specified
+                Color overlayColor = _tileColorData.GetOverlayColorForColor(_tileColor);
+                _spriteRenderer.color = overlayColor;
+
+                // Update collider size to match new sprite if needed
+                UpdateColliderSize();
+            }
+            else
+            {
+                // Fallback to solid colors if no sprite data is available
+                _spriteRenderer.color = GetFallbackColorFromTileColor(_tileColor);
             }
         }
 
-        private Color GetColorFromTileColor(TileColor color)
+        private void UpdateColliderSize()
+        {
+            if (_tileCollider is BoxCollider2D boxCollider && _spriteRenderer != null && _spriteRenderer.sprite != null)
+            {
+                boxCollider.size = _spriteRenderer.sprite.bounds.size;
+            }
+        }
+
+        private Color GetFallbackColorFromTileColor(TileColor color)
         {
             return color switch
             {

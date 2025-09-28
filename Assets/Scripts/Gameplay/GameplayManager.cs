@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 using ColorChain.Core;
 
 namespace ColorChain.GamePlay
@@ -12,6 +14,7 @@ namespace ColorChain.GamePlay
         [Header("Gameplay Settings")]
         [SerializeField] private int _minChainSize = 2;
         [SerializeField] private float _chainDelay = 0.1f;
+        [SerializeField] private float _regenerationDelay = 1.0f;
 
         private ChainReaction _chainReaction;
 
@@ -67,6 +70,12 @@ namespace ColorChain.GamePlay
             // Subscribe to tile events
             Tile.OnTileClicked += OnTileClicked;
 
+            // Subscribe to chain reaction events (must be after ChainReaction is created)
+            if (_chainReaction != null)
+            {
+                _chainReaction.OnChainCompleted += OnChainCompleted;
+            }
+
             // Subscribe to game manager events
             GameStateManager.OnGameStarted += OnGameStarted;
             GameStateManager.OnGameEnded += OnGameEnded;
@@ -77,6 +86,12 @@ namespace ColorChain.GamePlay
         {
             // Unsubscribe from events
             Tile.OnTileClicked -= OnTileClicked;
+
+            if (_chainReaction != null)
+            {
+                _chainReaction.OnChainCompleted -= OnChainCompleted;
+            }
+
             GameStateManager.OnGameStarted -= OnGameStarted;
             GameStateManager.OnGameEnded -= OnGameEnded;
             GameStateManager.OnStateChanged -= OnGameStateChanged;
@@ -91,6 +106,15 @@ namespace ColorChain.GamePlay
             if (_chainReaction != null && GameStateManager.IsGameActive)
             {
                 _chainReaction.StartChain(clickedTile);
+            }
+        }
+
+        private void OnChainCompleted(List<Tile> chainedTiles)
+        {
+            // Start coroutine to regenerate tiles after a delay
+            if (_tileGrid != null)
+            {
+                StartCoroutine(RegenerateTilesAfterDelay(chainedTiles, _regenerationDelay));
             }
         }
 
@@ -115,6 +139,25 @@ namespace ColorChain.GamePlay
             if (_tileGrid != null)
             {
                 _tileGrid.OnGameStateChanged(state);
+            }
+        }
+
+        #endregion
+
+        #region Coroutines
+
+        private IEnumerator RegenerateTilesAfterDelay(List<Tile> tilesToRegenerate, float delay)
+        {
+            Debug.Log($"Starting tile regeneration in {delay} seconds for {tilesToRegenerate.Count} tiles");
+
+            // Wait for the specified delay
+            yield return new WaitForSeconds(delay);
+
+            // Check if game is still active before regenerating
+            if (GameStateManager.IsGameActive && _tileGrid != null)
+            {
+                _tileGrid.RegenerateTiles(tilesToRegenerate);
+                Debug.Log($"Regenerated {tilesToRegenerate.Count} tiles with new colors");
             }
         }
 

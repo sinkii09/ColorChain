@@ -168,6 +168,7 @@ MonoBehaviour:
   _inputManager: {fileID: 7922427}
   _minChainSize: 2
   _chainDelay: 0.1
+  _regenerationDelay: 1
 --- !u!114 &7922427
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -763,6 +764,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ColorChain::ColorChain.Core.TileGrid
   tilePrefab: {fileID: 4454461966933566201, guid: b359b9d90c9b0f2439cdcf545951545b, type: 3}
+  tileColorData: {fileID: 11400000, guid: 2a8522c54081b3140a11f5979651d09f, type: 2}
   _tileSpacing: 1.1
   _gridOffset: {x: 0, y: 0, z: 0}
 --- !u!4 &677847141
