@@ -96,5 +96,10 @@ namespace ColorChain.Core
                 }
             }
         }
+
+        public static void AddBonusTime(float timeBonusAmount)
+        {
+            _timer += timeBonusAmount;
+        }
     }
 }

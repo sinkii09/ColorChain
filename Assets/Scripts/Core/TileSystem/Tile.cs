@@ -175,5 +175,10 @@ namespace ColorChain.Core
         {
             // TODO: Add visual/audio feedback for tile removal
         }
+
+        public void PlayColorChangeEffect()
+        {
+
+        }
     }
 }

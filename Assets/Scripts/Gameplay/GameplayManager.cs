@@ -1,7 +1,9 @@
-using UnityEngine;
+using ColorChain.Core;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using ColorChain.Core;
+using System.Linq;
+using UnityEngine;
 
 namespace ColorChain.GamePlay
 {
@@ -15,7 +17,11 @@ namespace ColorChain.GamePlay
         [SerializeField] private int _minChainSize = 2;
         [SerializeField] private float _chainDelay = 0.1f;
         [SerializeField] private float _regenerationDelay = 1.0f;
+        [SerializeField] private PowerUpConfig _powerUpConfig;
 
+        private float _multiplierTimeRemaining = 0f;
+
+        private PowerUpSystem _powerUpSystem;
         private ChainReaction _chainReaction;
 
         #region Unity Lifecycle
@@ -29,6 +35,10 @@ namespace ColorChain.GamePlay
         {
             CleanupGameplay();
         }
+        private void Update()
+        {
+            _multiplierTimeRemaining -= Time.deltaTime;
+        }
 
         #endregion
 
@@ -37,6 +47,7 @@ namespace ColorChain.GamePlay
         private void InitializeGameplay()
         {
             InitializeComponents();
+            InitializePowerUp();
             InitializeChainReaction();
             SubscribeToEvents();
         }
@@ -59,7 +70,10 @@ namespace ColorChain.GamePlay
                 }
             }
         }
-
+        private void InitializePowerUp()
+        {
+            _powerUpSystem = new PowerUpSystem(_powerUpConfig);
+        }
         private void InitializeChainReaction()
         {
             _chainReaction = new ChainReaction(_tileGrid, _minChainSize, _chainDelay);
@@ -73,7 +87,13 @@ namespace ColorChain.GamePlay
             // Subscribe to chain reaction events (must be after ChainReaction is created)
             if (_chainReaction != null)
             {
+                _chainReaction.OnChainExcecuted += OnchainExcecuted;
                 _chainReaction.OnChainCompleted += OnChainCompleted;
+            }
+
+            if (_powerUpSystem != null)
+            {
+                _powerUpSystem.OnPowerUp += OnPowerUp;
             }
 
             // Subscribe to game manager events
@@ -89,7 +109,13 @@ namespace ColorChain.GamePlay
 
             if (_chainReaction != null)
             {
+                _chainReaction.OnChainExcecuted -= OnchainExcecuted;
                 _chainReaction.OnChainCompleted -= OnChainCompleted;
+            }
+
+            if (_powerUpSystem != null)
+            {
+                _powerUpSystem.OnPowerUp -= OnPowerUp;
             }
 
             GameStateManager.OnGameStarted -= OnGameStarted;
@@ -107,6 +133,16 @@ namespace ColorChain.GamePlay
             {
                 _chainReaction.StartChain(clickedTile);
             }
+        }
+
+        private void OnchainExcecuted(int chainSize)
+        {
+            if (_powerUpSystem == null) return;
+
+            var calculatedSize = Mathf.RoundToInt(GetCurrentMultiplier() * chainSize);
+            ScoreManager.AddChainScore(calculatedSize);
+
+            _powerUpSystem.AddPowerBarProgress(chainSize);
         }
 
         private void OnChainCompleted(List<Tile> chainedTiles)
@@ -142,6 +178,16 @@ namespace ColorChain.GamePlay
             }
         }
 
+        private void OnPowerUp(PowerUpType type)
+        {
+            // 1. Show power-up name/icon (0.5s delay for anticipation)
+            // 2. Execute the power-up effect
+            // 3. Reset power bar to 0
+            // 4. Handle any overflow (optional)
+            _powerUpSystem.ResetPowerBar();
+        }
+
+
         #endregion
 
         #region Coroutines
@@ -163,18 +209,51 @@ namespace ColorChain.GamePlay
 
         #endregion
 
-        #region Public Interface
-
-        public TileGrid GetTileGrid()
+        #region PowerUp Excecution
+        private void ExecuteColorConverter()
         {
-            return _tileGrid;
+            // 1. Count each color on the board
+            // 2. Find most populous color
+            // 3. Find second most populous color
+            // 4. Convert all tiles of first color to second
+            // 5. Trigger visual effects
+
+            Dictionary<TileColor, HashSet<Tile>> tilesByColor = _tileGrid.GetTilesByColor();
+            if (tilesByColor == null || tilesByColor.Count < 2)
+                return;
+
+            // Find most common color
+            TileColor mostCommon = tilesByColor.OrderByDescending(x => x.Value).First().Key;
+            // Find second most common color
+            TileColor secondCommon = tilesByColor.OrderByDescending(x => x.Value).Skip(1).First().Key;
+
+            _tileGrid.UpdateTilesColor(tilesByColor[mostCommon], secondCommon);
         }
 
-        public ChainReaction GetChainReaction()
+        private void ExecuteTimeBonus()
         {
-            return _chainReaction;
+            // 1. Call GameStateManager.AddBonusTime(10f)
+            // 2. Show "+10s" floating text
+            // 3. Flash timer UI
+
+            GameStateManager.AddBonusTime(_powerUpSystem.TimerBonusAmount);
         }
 
+        private void ExecuteScoreMultiplier()
+        {
+            // 1. Set isMultiplierActive = true
+            // 2. Set multiplierTimeRemaining = 5f
+            // 3. Start countdown coroutine
+            // 4. Show "2X" indicator on UI
+
+            _multiplierTimeRemaining += _powerUpSystem.MultiplierDuration;
+        }
         #endregion
+
+
+        public float GetCurrentMultiplier()
+        {
+            return _multiplierTimeRemaining > 0 ? _powerUpSystem.MultiplierAmount : 1f;
+        }
     }
 }

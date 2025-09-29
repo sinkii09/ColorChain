@@ -14,7 +14,7 @@ namespace ColorChain.GamePlay
 
         // Event to notify when chain is completed and tiles need regeneration
         public Action<List<Tile>> OnChainCompleted;
-
+        public Action<int> OnChainExcecuted;
         public ChainReaction(TileGrid tileGrid, int minChainSize = 2, float chainDelay = 0.1f)
         {
             _tileGrid = tileGrid;
@@ -74,7 +74,7 @@ namespace ColorChain.GamePlay
         private void ExecuteChain(List<Tile> chainTiles)
         {
             // 1. Calculate and award score
-            ScoreManager.AddChainScore(chainTiles.Count);
+            OnChainExcecuted?.Invoke(chainTiles.Count);
 
             // 2. Play deactivation effects
             foreach (var tile in chainTiles)

@@ -138,6 +138,30 @@ namespace ColorChain.Core
             return new Vector3(worldX, worldY, 0) + _gridOffset;
         }
 
+        public Dictionary<TileColor, HashSet<Tile>> GetTilesByColor()
+        {
+            Dictionary<TileColor, HashSet<Tile>> tilesByColor = new Dictionary<TileColor, HashSet<Tile>>();
+            for (int x = 0; x < WIDTH; x++)
+            {
+                for (int y = 0; y < HEIGHT; y++)
+                {
+                    Tile tile = GetTile(x, y);
+                    if (tile != null && tile.IsActive)
+                    {
+                        if (!tilesByColor.ContainsKey(tile.TileColor))
+                        {
+                            HashSet<Tile> encounteredColors = new HashSet<Tile>();
+                            tilesByColor[tile.TileColor] = encounteredColors;
+                        }
+
+                        tilesByColor[tile.TileColor].Add(tile);
+                    }
+                }
+            }
+
+            return tilesByColor;
+        }
+
         #endregion
 
         #region Grid Management
@@ -180,6 +204,18 @@ namespace ColorChain.Core
                         DestroyImmediate(tiles[x, y].gameObject);
                         tiles[x, y] = null;
                     }
+                }
+            }
+        }
+
+        public void UpdateTilesColor(HashSet<Tile> tiles, TileColor newColor)
+        {
+            foreach (var tile in tiles)
+            {
+                if (tile != null)
+                {
+                    tile.SetTileColor(newColor);
+                    tile.PlayColorChangeEffect();
                 }
             }
         }
