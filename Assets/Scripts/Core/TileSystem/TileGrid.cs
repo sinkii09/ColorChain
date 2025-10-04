@@ -17,12 +17,10 @@ namespace ColorChain.Core
 
         [Header("Tile Configuration")]
         [SerializeField] private Tile _tilePrefab;
-        [SerializeField] private GameObject _framePrefab;
         [SerializeField] private TileColorData tileColorData;
         [SerializeField] private Vector3 _gridOffset = Vector3.zero;
 
         private Tile[,] _tiles = new Tile[WIDTH, HEIGHT];
-        private GameObject[,] _frames = new GameObject[WIDTH, HEIGHT];
 
         #endregion
 
@@ -68,10 +66,7 @@ namespace ColorChain.Core
                 for (int y = 0; y < HEIGHT; y++)
                 {
                     Vector3 worldPos = GridToWorldPosition(x, y);
-                    GameObject frame = Instantiate(_framePrefab, worldPos, Quaternion.identity, transform);
                     Tile tile = Instantiate(_tilePrefab, worldPos, Quaternion.identity, transform);
-
-                    _frames[x, y] = frame;
                     _tiles[x, y] = tile;
 
                     tile.Initialize(x, y, GetRandomColor(), tileColorData);
@@ -191,9 +186,6 @@ namespace ColorChain.Core
                     // Reactivate the tile with a new random color
                     tile.SetTileColor(GetRandomColor());
                     tile.SetActive(true);
-
-                    // Play regeneration effect if needed
-                    tile.PlayActivationEffect();
                 }
             }
         }
@@ -209,12 +201,6 @@ namespace ColorChain.Core
                         DestroyImmediate(_tiles[x, y].gameObject);
                         _tiles[x, y] = null;
                     }
-
-                    if(_frames[x, y] != null)
-                    {
-                        DestroyImmediate( _frames[x, y].gameObject);
-                        _frames[x, y] = null;
-                    }
                 }
             }
         }
@@ -226,7 +212,6 @@ namespace ColorChain.Core
                 if (tile != null)
                 {
                     tile.SetTileColor(newColor);
-                    tile.PlayColorChangeEffect();
                 }
             }
         }
@@ -256,12 +241,6 @@ namespace ColorChain.Core
             {
                 for (int y = 0; y < HEIGHT; y++)
                 {
-
-                    if (_frames[x, y] != null)
-                    {
-                        _frames[x, y].SetActive(interactive);
-                    }
-
                     if (_tiles[x, y] != null)
                     {
                         _tiles[x, y].SetActive(interactive);

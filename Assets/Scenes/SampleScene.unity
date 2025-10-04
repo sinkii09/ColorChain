@@ -169,7 +169,7 @@ MonoBehaviour:
   _inputManager: {fileID: 7922427}
   _backgroundRenderer: {fileID: 835609225}
   _regenerationDelay: 1
-  _tileGridPrefab: {fileID: 6445353675821875972, guid: 5e36018c51d19b849b3fef98eea86a7a, type: 3}
+  _tileGridPrefab: {fileID: 2972880126039300762, guid: 5e36018c51d19b849b3fef98eea86a7a, type: 3}
   _powerUpConfig:
     smallChainFill: 10
     mediumChainFill: 25

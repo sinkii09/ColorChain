@@ -100,7 +100,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2962701853888319660}
-  - component: {fileID: 6445353675821875972}
+  - component: {fileID: 2972880126039300762}
   m_Layer: 0
   m_Name: TileGrid
   m_TagString: Untagged
@@ -124,7 +124,7 @@ Transform:
   - {fileID: 4705528179745970428}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6445353675821875972
+--- !u!114 &2972880126039300762
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -137,7 +137,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ColorChain::ColorChain.Core.TileGrid
   _tilePrefab: {fileID: 4454461966933566201, guid: b359b9d90c9b0f2439cdcf545951545b, type: 3}
-  _framePrefab: {fileID: 728311632245677059, guid: d4617c957b12ca2479516793f461b1b5, type: 3}
   tileColorData: {fileID: 11400000, guid: 2a8522c54081b3140a11f5979651d09f, type: 2}
   _gridOffset: {x: 0, y: 0, z: 0}
 --- !u!1 &7815439112310112188

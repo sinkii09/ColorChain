@@ -29,10 +29,15 @@ namespace ColorChain.GamePlay
             // 4. Execute chain if valid
 
             List<Tile> connectedTiles = FindConnectedTiles(startTile);
-            if (connectedTiles.Count >= _config.MinChainSize)
+            if (connectedTiles.Count < _config.MinChainSize)
             {
-                ExecuteChain(connectedTiles);
+                foreach (Tile tile in connectedTiles)
+                {
+                    tile.PlayNoChainEffect();
+                }
+                return;
             }
+            ExecuteChain(connectedTiles);
         }
 
         private List<Tile> FindConnectedTiles(Tile startTile)
@@ -76,20 +81,11 @@ namespace ColorChain.GamePlay
             // 1. Calculate and award score
             OnChainExcecuted?.Invoke(chainTiles.Count);
 
-            // 2. Play deactivation effects
-            foreach (var tile in chainTiles)
-            {
-                tile.PlayDeactivationEffect();
-            }
-
             // 3. Deactivate tiles
             foreach (var tile in chainTiles)
             {
                 tile.SetActive(false);
             }
-
-            // 4. Play chain effects
-            PlayChainEffects(chainTiles);
 
             // 5. Notify that chain is completed - regeneration will be handled by GameplayManager
             OnChainCompleted?.Invoke(chainTiles);

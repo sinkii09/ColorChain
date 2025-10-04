@@ -1,10 +1,13 @@
 using UnityEngine;
 using System;
+using DG.Tweening;
 
 namespace ColorChain.Core
 {
     public class Tile : MonoBehaviour
     {
+        #region Fields & Properties
+
         [Header("Tile Properties")]
         [SerializeField] private int x;
         [SerializeField] private int y;
@@ -17,16 +20,43 @@ namespace ColorChain.Core
 
         [Header("Visual Configuration")]
         [SerializeField] private TileColorData _tileColorData;
+        [SerializeField] private float _animationDuration = 0.2f;
+
+        private Sequence activationSequence;
+        private Sequence deactivationSequence;
+        private Sequence colorChangeSequence;
+        private Sequence noChainSequence;
 
         public bool IsActive => _isActive;
         public TileColor TileColor => _tileColor;
 
-        // Events
+        #endregion
+
+        #region Events
+
         public static event Action<Tile> OnTileClicked;
+
+        #endregion
+
+        #region Unity Lifecycle
         private void Awake()
         {
+            DOTween.SetTweensCapacity(500, 50);
             SetupComponents();
         }
+
+        private void OnDestroy()
+        {
+            // Clean up all sequences to prevent memory leaks
+            activationSequence?.Kill();
+            deactivationSequence?.Kill();
+            colorChangeSequence?.Kill();
+            noChainSequence?.Kill();
+        }
+
+        #endregion
+
+        #region Initialization
 
         private void SetupComponents()
         {
@@ -84,6 +114,10 @@ namespace ColorChain.Core
             }
         }
 
+        #endregion
+
+        #region Public API
+
         public void SetWorldPos(Vector3 worldPos)
         {
             transform.position = worldPos;
@@ -109,8 +143,20 @@ namespace ColorChain.Core
         public void SetActive(bool active)
         {
             _isActive = active;
-            gameObject.SetActive(active);
+            if (active)
+            {
+                gameObject.SetActive(true);
+                PlayActivationEffect();
+            }
+            else
+            {
+                PlayDeactivationEffect(() => gameObject.SetActive(false));
+            }
         }
+
+        #endregion
+
+        #region Visual Updates
 
         private void UpdateVisualColor()
         {
@@ -127,6 +173,7 @@ namespace ColorChain.Core
                 Color overlayColor = _tileColorData.GetOverlayColorForColor(_tileColor);
                 _spriteRenderer.color = overlayColor;
 
+                PlayColorChangeEffect();
                 // Update collider size to match new sprite if needed
                 UpdateColliderSize();
             }
@@ -158,6 +205,10 @@ namespace ColorChain.Core
             };
         }
 
+        #endregion
+
+        #region Input Handling
+
         public void HandleTileClick()
         {
             if (!_isActive || !GameStateManager.IsGameActive) return;
@@ -166,19 +217,89 @@ namespace ColorChain.Core
             OnTileClicked?.Invoke(this);
         }
 
-        public void PlayActivationEffect()
+        #endregion
+
+        #region Visual Effects
+
+        private void PlayActivationEffect()
         {
-            // TODO: Add visual/audio feedback for tile activation
+            activationSequence?.Kill();
+
+            transform.localScale = Vector3.one;
+
+            if (_spriteRenderer != null)
+            {
+                Color c = _spriteRenderer.color;
+                c.a = 1f;
+                _spriteRenderer.color = c;
+            }
+
+            activationSequence = DOTween.Sequence();
+
+            // Pop scale effect
+            activationSequence.Append(transform.DOPunchScale(Vector3.one * 0.2f, _animationDuration, 5, 0.5f));
+
+            // Flash effect
+            if (_spriteRenderer != null)
+            {
+                Color originalColor = _spriteRenderer.color;
+                activationSequence.Join(_spriteRenderer.DOColor(Color.white, _animationDuration / 2));
+                activationSequence.Append(_spriteRenderer.DOColor(originalColor, _animationDuration));
+            }
         }
 
-        public void PlayDeactivationEffect()
+        private void PlayDeactivationEffect(System.Action onComplete = null)
         {
-            // TODO: Add visual/audio feedback for tile removal
+            deactivationSequence?.Kill();
+
+            if (_spriteRenderer == null)
+            {
+                onComplete?.Invoke();
+                return;
+            }
+
+            // Shrink and fade out
+            deactivationSequence = DOTween.Sequence();
+            deactivationSequence.Append(transform.DOScale(Vector3.zero, _animationDuration).SetEase(Ease.InBack));
+            deactivationSequence.Join(_spriteRenderer.DOFade(0f, _animationDuration));
+            deactivationSequence.OnComplete(() => onComplete?.Invoke());
         }
 
         public void PlayColorChangeEffect()
         {
+            if (_spriteRenderer == null) return;
 
+            colorChangeSequence?.Kill();
+
+            // Quick rotation and scale pulse
+            colorChangeSequence = DOTween.Sequence();
+            colorChangeSequence.Append(transform.DOPunchRotation(new Vector3(0, 0, 15f), _animationDuration, 5, 0.5f));
+            colorChangeSequence.Join(transform.DOPunchScale(Vector3.one * 0.15f, _animationDuration, 3, 0.3f));
         }
+
+        public void PlayNoChainEffect()
+        {
+            if (_spriteRenderer == null) return;
+
+            noChainSequence?.Kill();
+
+            // Shake and darken to indicate invalid move
+            noChainSequence = DOTween.Sequence();
+
+            // Horizontal shake (like saying "no")
+            Vector3 originalPos = transform.localPosition;
+            noChainSequence.Append(transform.DOShakePosition(_animationDuration * 1.5f, new Vector3(0.15f, 0, 0), 20, 90, false, true));
+            noChainSequence.OnComplete(() => transform.localPosition = originalPos);
+
+            // Darken briefly
+            Color originalColor = _spriteRenderer.color;
+            Color darkenedColor = originalColor * 0.6f;
+            darkenedColor.a = originalColor.a;
+
+            noChainSequence.Join(_spriteRenderer.DOColor(darkenedColor, _animationDuration * 0.5f));
+            noChainSequence.Append(_spriteRenderer.DOColor(originalColor, _animationDuration));
+        }
+
+        #endregion
     }
 }
