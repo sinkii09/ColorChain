@@ -1,4 +1,6 @@
 using ColorChain.Core;
+using ColorChain.Gameplay;
+using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,31 +11,50 @@ namespace ColorChain.GamePlay
 {
     public class GameplayManager : MonoBehaviour
     {
+        private static GameplayManager instance;
+        public static GameplayManager Instance => instance;
+        public PowerUpSystem PowerUpSystem => _powerUpSystem;
         [Header("Game Components")]
-        [SerializeField] private TileGrid _tileGrid;
         [SerializeField] private InputManager _inputManager;
+        [SerializeField] private ShiningEffect _backgroundRenderer;
 
         [Header("Gameplay Settings")]
-        [SerializeField] private int _minChainSize = 2;
-        [SerializeField] private float _chainDelay = 0.1f;
         [SerializeField] private float _regenerationDelay = 1.0f;
+        [SerializeField] private TileGrid _tileGridPrefab;
         [SerializeField] private PowerUpConfig _powerUpConfig;
+        [SerializeField] private ChainReactionConfig _chainReactionConfig;
 
         private float _multiplierTimeRemaining = 0f;
 
+        private TileGrid _tileGrid;
         private PowerUpSystem _powerUpSystem;
         private ChainReaction _chainReaction;
 
         #region Unity Lifecycle
 
+        private void Awake()
+        {
+            DOTween.Init();
+
+            if (instance != null && instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            instance = this;
+        }
+
         private void Start()
         {
-            InitializeGameplay();
+            InitializeComponents();
+            SubscribeToEvents();
         }
 
         private void OnDestroy()
         {
             CleanupGameplay();
+            if (instance == this)
+                instance = null;
         }
         private void Update()
         {
@@ -46,19 +67,21 @@ namespace ColorChain.GamePlay
 
         private void InitializeGameplay()
         {
-            InitializeComponents();
-            InitializePowerUp();
-            InitializeChainReaction();
-            SubscribeToEvents();
+            if (_tileGrid != null)
+            {
+                _tileGrid.ResetGrid();
+                _tileGrid.gameObject.SetActive(true);
+                return;
+            }
+            if (_tileGridPrefab != null)
+            {
+                _tileGrid = Instantiate(_tileGridPrefab, Vector3.zero, Quaternion.identity);
+                _chainReaction.SetTileGrid(_tileGrid);
+            }
         }
 
         private void InitializeComponents()
         {
-            if (_tileGrid == null)
-            {
-                _tileGrid = FindAnyObjectByType<TileGrid>();
-            }
-
             if (_inputManager == null)
             {
                 _inputManager = FindAnyObjectByType<InputManager>();
@@ -69,6 +92,9 @@ namespace ColorChain.GamePlay
                     _inputManager = inputManagerGO.AddComponent<InputManager>();
                 }
             }
+
+            InitializePowerUp();
+            InitializeChainReaction();
         }
         private void InitializePowerUp()
         {
@@ -76,7 +102,7 @@ namespace ColorChain.GamePlay
         }
         private void InitializeChainReaction()
         {
-            _chainReaction = new ChainReaction(_tileGrid, _minChainSize, _chainDelay);
+            _chainReaction = new ChainReaction(_chainReactionConfig);
         }
 
         private void SubscribeToEvents()
@@ -159,10 +185,7 @@ namespace ColorChain.GamePlay
             // Reset score for new game
             ScoreManager.ResetCurrentScore();
 
-            if (_tileGrid != null)
-            {
-                _tileGrid.ResetGrid();
-            }
+            InitializeGameplay();
         }
 
         private void OnGameEnded()
@@ -176,15 +199,38 @@ namespace ColorChain.GamePlay
             {
                 _tileGrid.OnGameStateChanged(state);
             }
+
+            switch (state)
+            { 
+                case GameState.MainMenu:
+                    _tileGrid.gameObject.SetActive(false);
+                    _backgroundRenderer.Play();
+                    break;
+                case GameState.GameOver:
+                case GameState.Paused:
+                    break;
+                case GameState.Playing:
+                    _backgroundRenderer.StopRotate();
+                    break;
+                    
+            }
         }
 
         private void OnPowerUp(PowerUpType type)
         {
-            // 1. Show power-up name/icon (0.5s delay for anticipation)
-            // 2. Execute the power-up effect
-            // 3. Reset power bar to 0
-            // 4. Handle any overflow (optional)
-            _powerUpSystem.ResetPowerBar();
+            // Execute the power-up effect based on type
+            switch (type)
+            {
+                case PowerUpType.ColorConverter:
+                    ExecuteColorConverter();
+                    break;
+                case PowerUpType.TimeBonus:
+                    ExecuteTimeBonus();
+                    break;
+                case PowerUpType.ScoreMultiplier:
+                    ExecuteScoreMultiplier();
+                    break;
+            }
         }
 
 

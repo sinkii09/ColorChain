@@ -41,32 +41,6 @@ namespace ColorChain.Core
             this._multiplierDuration = config.multiplierDuration;
         }
 
-        #region Unity Lifecycle
-        //private void Awake()
-        //{
-        //    // Get references to TileGrid and GameplayManager
-        //}
-
-        //private void Start()
-        //{
-        //    // Initialize power bar UI
-        //    // Subscribe to events
-        //}
-
-        //private void OnDestroy()
-        //{
-        //    // Unsubscribe from events
-        //    // Clean up
-        //}
-
-        //private void Update()
-        //{
-        //    // Countdown multiplier timer if active
-        //    // Update UI for multiplier remaining time
-        //}
-
-        #endregion
-
         public void AddPowerBarProgress(int chainSize)
         {
             if (chainSize >= 2 && chainSize <= 3)

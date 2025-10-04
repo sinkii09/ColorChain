@@ -7,19 +7,19 @@ namespace ColorChain.GamePlay
 {
     public class ChainReaction
     {
-        private int _minChainSize = 2;
-        private float _chainDelay = 0.1f;
-
+        private ChainReactionConfig _config;
         private TileGrid _tileGrid;
 
         // Event to notify when chain is completed and tiles need regeneration
         public Action<List<Tile>> OnChainCompleted;
         public Action<int> OnChainExcecuted;
-        public ChainReaction(TileGrid tileGrid, int minChainSize = 2, float chainDelay = 0.1f)
+        public ChainReaction(ChainReactionConfig config)
+        {
+            _config = config;
+        }
+        public void SetTileGrid(TileGrid tileGrid)
         {
             _tileGrid = tileGrid;
-            _minChainSize = minChainSize;
-            _chainDelay = chainDelay;
         }
         public void StartChain(Tile startTile)
         {
@@ -29,7 +29,7 @@ namespace ColorChain.GamePlay
             // 4. Execute chain if valid
 
             List<Tile> connectedTiles = FindConnectedTiles(startTile);
-            if (connectedTiles.Count >= _minChainSize)
+            if (connectedTiles.Count >= _config.MinChainSize)
             {
                 ExecuteChain(connectedTiles);
             }

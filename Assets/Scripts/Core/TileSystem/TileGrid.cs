@@ -13,14 +13,16 @@ namespace ColorChain.Core
         [Header("Grid Settings")]
         public const int WIDTH = 6;
         public const int HEIGHT = 8;
+        public const float TILE_SPACING = 1.1f;
 
         [Header("Tile Configuration")]
-        [SerializeField] private Tile tilePrefab;
+        [SerializeField] private Tile _tilePrefab;
+        [SerializeField] private GameObject _framePrefab;
         [SerializeField] private TileColorData tileColorData;
-        [SerializeField] private float _tileSpacing = 1.1f;
         [SerializeField] private Vector3 _gridOffset = Vector3.zero;
 
-        private Tile[,] tiles = new Tile[WIDTH, HEIGHT];
+        private Tile[,] _tiles = new Tile[WIDTH, HEIGHT];
+        private GameObject[,] _frames = new GameObject[WIDTH, HEIGHT];
 
         #endregion
 
@@ -38,7 +40,7 @@ namespace ColorChain.Core
 
         private void OnDrawGizmosSelected()
         {
-            Gizmos.color = Color.yellow;
+            Gizmos.color = Color.darkRed;
             for (int x = 0; x < WIDTH; x++)
             {
                 for (int y = 0; y < HEIGHT; y++)
@@ -66,8 +68,11 @@ namespace ColorChain.Core
                 for (int y = 0; y < HEIGHT; y++)
                 {
                     Vector3 worldPos = GridToWorldPosition(x, y);
-                    Tile tile = Instantiate(tilePrefab, worldPos, Quaternion.identity, transform);
-                    tiles[x, y] = tile;
+                    GameObject frame = Instantiate(_framePrefab, worldPos, Quaternion.identity, transform);
+                    Tile tile = Instantiate(_tilePrefab, worldPos, Quaternion.identity, transform);
+
+                    _frames[x, y] = frame;
+                    _tiles[x, y] = tile;
 
                     tile.Initialize(x, y, GetRandomColor(), tileColorData);
                 }
@@ -80,15 +85,15 @@ namespace ColorChain.Core
             {
                 for (int y = 0; y < HEIGHT; y++)
                 {
-                    if (tiles[x, y] != null)
+                    if (_tiles[x, y] != null)
                     {
                         // Ensure tile has the color data reference
                         if (tileColorData != null)
                         {
-                            tiles[x, y].SetTileColorData(tileColorData);
+                            _tiles[x, y].SetTileColorData(tileColorData);
                         }
 
-                        tiles[x, y].SetTileColor(GetRandomColor());
+                        _tiles[x, y].SetTileColor(GetRandomColor());
                     }
                 }
             }
@@ -109,7 +114,7 @@ namespace ColorChain.Core
             {
                 return null;
             }
-            return tiles[x, y];
+            return _tiles[x, y];
         }
 
         public List<Tile> GetNeighbors(int x, int y)
@@ -133,8 +138,8 @@ namespace ColorChain.Core
 
         private Vector3 GridToWorldPosition(int x, int y)
         {
-            float worldX = (x - (WIDTH - 1) * 0.5f) * _tileSpacing;
-            float worldY = (y - (HEIGHT - 1) * 0.5f) * _tileSpacing;
+            float worldX = (x - (WIDTH - 1) * 0.5f) * TILE_SPACING;
+            float worldY = (y - (HEIGHT - 1) * 0.5f) * TILE_SPACING;
             return new Vector3(worldX, worldY, 0) + _gridOffset;
         }
 
@@ -199,10 +204,16 @@ namespace ColorChain.Core
             {
                 for (int y = 0; y < HEIGHT; y++)
                 {
-                    if (tiles[x, y] != null)
+                    if (_tiles[x, y] != null)
                     {
-                        DestroyImmediate(tiles[x, y].gameObject);
-                        tiles[x, y] = null;
+                        DestroyImmediate(_tiles[x, y].gameObject);
+                        _tiles[x, y] = null;
+                    }
+
+                    if(_frames[x, y] != null)
+                    {
+                        DestroyImmediate( _frames[x, y].gameObject);
+                        _frames[x, y] = null;
                     }
                 }
             }
@@ -245,9 +256,15 @@ namespace ColorChain.Core
             {
                 for (int y = 0; y < HEIGHT; y++)
                 {
-                    if (tiles[x, y] != null)
+
+                    if (_frames[x, y] != null)
                     {
-                        tiles[x, y].SetActive(interactive);
+                        _frames[x, y].SetActive(interactive);
+                    }
+
+                    if (_tiles[x, y] != null)
+                    {
+                        _tiles[x, y].SetActive(interactive);
                     }
                 }
             }
