@@ -41,7 +41,6 @@ namespace ColorChain.Core
         #region Unity Lifecycle
         private void Awake()
         {
-            DOTween.SetTweensCapacity(500, 50);
             SetupComponents();
         }
 

@@ -28,7 +28,6 @@ namespace ColorChain.Core
 
         private void Start()
         {
-            InitializeGrid();
         }
 
         private void OnDestroy()
@@ -56,7 +55,7 @@ namespace ColorChain.Core
         public void InitializeGrid()
         {
             CreateTiles();
-            RandomizeColors();
+            //RandomizeColors();
         }
 
         private void CreateTiles()

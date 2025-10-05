@@ -5,7 +5,7 @@ namespace ColorChain.UI
     public abstract class BaseUIPanel : MonoBehaviour
     {
         protected bool isInitialized = false;
-
+        protected bool isActive = false;
         public virtual void Initialize()
         {
             if (isInitialized) return;
@@ -20,6 +20,7 @@ namespace ColorChain.UI
             UnsubscribeFromEvents();
             OnCleanup();
             isInitialized = false;
+            isActive = false;
         }
 
         protected virtual void OnDestroy()
@@ -35,14 +36,38 @@ namespace ColorChain.UI
         protected abstract void UnsubscribeFromEvents();
         protected virtual void OnCleanup() { }
 
-        public virtual void Show()
+        public void Show()
         {
-            gameObject.SetActive(true);
+            if (!isInitialized)
+            {
+                Initialize();
+            }
+
+            if (isActive) return;
+            isActive = true;
+            OnShow();
         }
 
-        public virtual void Hide()
+        public void Hide()
+        {
+            if (!isActive) return;
+            isActive = false;
+            OnHide();
+        }
+
+        protected virtual void OnShow()
+        {
+            gameObject.SetActive(true);
+
+        }
+        protected virtual void OnHide()
         {
             gameObject.SetActive(false);
+        }
+
+        public virtual float GetTransitionDuration()
+        {
+            return 0f; // Default: no animation
         }
     }
 }

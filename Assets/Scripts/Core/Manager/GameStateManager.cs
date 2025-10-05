@@ -15,6 +15,7 @@ namespace ColorChain.Core
         public static float GameTimer => _timer;
         public static bool IsGameActive => _isGameActive;
 
+        public static event Action<GameState, GameState, Action> OnStateChangeRequested;
         public static event Action<GameState> OnStateChanged;
         public static event Action<float> OnTimerChanged;
         public static event Action OnGameStarted;
@@ -35,71 +36,113 @@ namespace ColorChain.Core
         public static void Terminate()
         {
             _isGameActive = false;
+            OnStateChangeRequested = null;
             OnStateChanged = null;
             OnTimerChanged = null;
             OnGameStarted = null;
             OnGameEnded = null;
         }
 
+        #region State Transitions
+
         public static void StartGame()
         {
-            _currentState = GameState.Playing;
-            _timer = TIME_LIMIT;
-            _isGameActive = true;
-
-            OnStateChanged?.Invoke(_currentState);
-            OnGameStarted?.Invoke();
-
-            Debug.Log("Game Started");
+            TransitionToState(GameState.Playing, state =>
+            {
+                _timer = TIME_LIMIT;
+                _isGameActive = true;
+                OnGameStarted?.Invoke();
+            });
         }
 
         public static void PauseGame()
         {
-            if (_currentState == GameState.Playing)
+            if (_currentState != GameState.Playing) return;
+
+            TransitionToState(GameState.Paused, state =>
             {
-                _currentState = GameState.Paused;
                 _isGameActive = false;
-                OnStateChanged?.Invoke(_currentState);
-            }
+            });
         }
 
         public static void ResumeGame()
         {
-            if (_currentState == GameState.Paused)
+            if (_currentState != GameState.Paused) return;
+
+            TransitionToState(GameState.Playing, state =>
             {
-                _currentState = GameState.Playing;
                 _isGameActive = true;
-                OnStateChanged?.Invoke(_currentState);
-            }
+            });
         }
 
         public static void EndGame()
         {
-            _currentState = GameState.GameOver;
-            _isGameActive = false;
-
-            OnStateChanged?.Invoke(_currentState);
-            OnGameEnded?.Invoke();
+            TransitionToState(GameState.GameOver, state =>
+            {
+                _isGameActive = false;
+                OnGameEnded?.Invoke();
+            });
         }
 
-        public static void UpdateTimer(float deltaTime)
+        public static void ToMainMenu()
         {
-            if (_isGameActive && _currentState == GameState.Playing)
+            TransitionToState(GameState.MainMenu, state =>
             {
-                _timer -= deltaTime;
-                OnTimerChanged?.Invoke(_timer);
+                _isGameActive = false;
+                _timer = TIME_LIMIT;
+            });
+        }
 
-                if (_timer <= 0f)
+        private static void TransitionToState(GameState newState, Action<GameState> onStateEnter)
+        {
+            GameState oldState = _currentState;
+
+            if (OnStateChangeRequested != null)
+            {
+                // Request UI to handle transition animations
+                OnStateChangeRequested.Invoke(oldState, newState, () =>
                 {
-                    _timer = 0f;
-                    EndGame();
-                }
+                    CompleteTransition(newState, onStateEnter);
+                });
+            }
+            else
+            {
+                // No UI listeners, transition immediately
+                CompleteTransition(newState, onStateEnter);
+            }
+        }
+
+        private static void CompleteTransition(GameState newState, Action<GameState> onStateEnter)
+        {
+            _currentState = newState;
+            onStateEnter?.Invoke(newState);
+            OnStateChanged?.Invoke(newState);
+        }
+
+        #endregion
+
+        #region Timer Management
+
+        private static void UpdateTimer(float deltaTime)
+        {
+            if (!_isGameActive || _currentState != GameState.Playing) return;
+
+            _timer -= deltaTime;
+            OnTimerChanged?.Invoke(_timer);
+
+            if (_timer <= 0f)
+            {
+                _timer = 0f;
+                EndGame();
             }
         }
 
         public static void AddBonusTime(float timeBonusAmount)
         {
             _timer += timeBonusAmount;
+            OnTimerChanged?.Invoke(_timer);
         }
+
+        #endregion
     }
 }

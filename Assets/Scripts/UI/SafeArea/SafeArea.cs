@@ -30,14 +30,14 @@ namespace ColorChain.UI
             currentSafeArea = Screen.safeArea;
             currentScreenSize = new Vector2Int(Screen.width, Screen.height);
 
-            // Convert safe area to anchors
+            // Convert safe area from screen pixels to normalized anchor coordinates
             Vector2 anchorMin = currentSafeArea.position;
             Vector2 anchorMax = currentSafeArea.position + currentSafeArea.size;
 
-            anchorMin.x /= Screen.width;
-            anchorMin.y /= Screen.height;
-            anchorMax.x /= Screen.width;
-            anchorMax.y /= Screen.height;
+            anchorMin.x /= currentScreenSize.x;
+            anchorMin.y /= currentScreenSize.y;
+            anchorMax.x /= currentScreenSize.x;
+            anchorMax.y /= currentScreenSize.y;
 
             // Apply to RectTransform
             rectTransform.anchorMin = anchorMin;

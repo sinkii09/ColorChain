@@ -5,24 +5,10 @@ using UnityEngine.UI;
 
 namespace ColorChain.UI
 {
-    [RequireComponent(typeof(SafeArea))]
-    public class Menu : MonoBehaviour
+    public class Menu : BaseUIPanel
     {
         [SerializeField] private TextMeshProUGUI _titleText;
         [SerializeField] private Button startGameButton;
-
-        private void Start()
-        {
-            if (startGameButton != null)
-                startGameButton.onClick.AddListener(OnStartGameClicked);
-        }
-
-        private void OnDestroy()
-        {
-            if (startGameButton != null)
-                startGameButton.onClick.RemoveListener(OnStartGameClicked);
-        }
-
         public void ShowMainMenuUI()
         {
             if (_titleText != null)
@@ -55,6 +41,22 @@ namespace ColorChain.UI
         private void OnStartGameClicked()
         {
             GameStateManager.StartGame();
+        }
+
+        protected override void OnInitialize()
+        {
+        }
+
+        protected override void SubscribeToEvents()
+        {
+            if (startGameButton != null)
+                startGameButton.onClick.AddListener(OnStartGameClicked);
+        }
+
+        protected override void UnsubscribeFromEvents()
+        {
+            if (startGameButton != null)
+                startGameButton.onClick.RemoveListener(OnStartGameClicked);
         }
         #endregion
     }

@@ -35,6 +35,7 @@ namespace ColorChain.GamePlay
         private void Awake()
         {
             DOTween.Init();
+            DOTween.SetTweensCapacity(500, 200);
 
             if (instance != null && instance != this)
             {
@@ -76,6 +77,8 @@ namespace ColorChain.GamePlay
             if (_tileGridPrefab != null)
             {
                 _tileGrid = Instantiate(_tileGridPrefab, Vector3.zero, Quaternion.identity);
+                _tileGrid.InitializeGrid();
+
                 _chainReaction.SetTileGrid(_tileGrid);
             }
         }

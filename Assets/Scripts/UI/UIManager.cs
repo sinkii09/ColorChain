@@ -7,13 +7,11 @@ namespace ColorChain.UI
 {
     public class UIManager : MonoBehaviour
     {
-        [Header("HUD System")]
         [SerializeField] private GameplayHUD gameplayHUD;
         [SerializeField] private Menu mainMenu;
+        [SerializeField] private PausePanel pausePanel;
 
-        [Header("Game State UI")]
         [SerializeField] private GameObject gameOverPanel;
-        [SerializeField] private GameObject pausePanel;
 
         private static UIManager instance;
         public static UIManager Instance => instance;
@@ -49,22 +47,22 @@ namespace ColorChain.UI
 
         private void InitializeUI()
         {
-            // Setup initial game state UI
+            pausePanel.Initialize();
+            SetPanelActive(gameplayHUD.gameObject, false);
+
             ShowMainMenuState();
-
-            // Setup button listeners
-
         }
 
         private void SubscribeToEvents()
         {
             // Game state events
+            GameStateManager.OnStateChangeRequested += OnStateChangeRequested;
             GameStateManager.OnStateChanged += OnGameStateChanged;
         }
-
         private void UnsubscribeFromEvents()
         {
             // Game state events
+            GameStateManager.OnStateChangeRequested -= OnStateChangeRequested;
             GameStateManager.OnStateChanged -= OnGameStateChanged;
         }
 
@@ -72,6 +70,38 @@ namespace ColorChain.UI
         #endregion
 
         #region Game State UI
+
+        private void OnStateChangeRequested(GameState oldState, GameState newState, System.Action onComplete)
+        {
+            StartCoroutine(HandleStateTransition(oldState, newState, onComplete));
+        }
+
+        private System.Collections.IEnumerator HandleStateTransition(GameState oldState, GameState newState, System.Action onComplete)
+        {
+            // Exit current state UI with animations
+            switch (oldState)
+            {
+                case GameState.Paused:
+                    if (pausePanel != null)
+                    {
+                        pausePanel.Hide();
+                        // Wait for pause panel hide animation
+                        yield return new WaitForSeconds(pausePanel.GetTransitionDuration());
+                    }
+                    break;
+                case GameState.MainMenu:
+                    if (mainMenu != null)
+                    {
+                        mainMenu.Hide();
+                        // Wait for main menu hide animation
+                        yield return new WaitForSeconds(mainMenu.GetTransitionDuration());
+                    }
+                    break;
+            }
+
+            // Complete the state change
+            onComplete?.Invoke();
+        }
 
         private void OnGameStateChanged(GameState newState)
         {
@@ -100,15 +130,15 @@ namespace ColorChain.UI
                 gameplayHUD.HideGameplayUI();
 
             if (mainMenu != null)
-                mainMenu.ShowMainMenuUI();
+                mainMenu.Show();
         }
 
         private void ShowPlayingState()
         {
             SetPanelActive(gameOverPanel, false);
 
-            if (mainMenu != null)
-                mainMenu.HideMainMenuUI();
+            if (gameplayHUD != null && gameplayHUD.gameObject.activeSelf == false)
+                SetPanelActive(gameplayHUD.gameObject, true);
 
             if (gameplayHUD != null)
                 gameplayHUD.ShowGameplayUI();
@@ -116,8 +146,7 @@ namespace ColorChain.UI
 
         private void ShowPausedState()
         {
-            SetPanelActive(pausePanel, true);
-            SetPanelActive(gameOverPanel, false);
+            pausePanel.Show();
         }
 
         private void ShowGameOverState()
