@@ -146,6 +146,10 @@ namespace ColorChain.UI
 
         private void ShowPausedState()
         {
+            if (pausePanel == null) return;
+            if (pausePanel.gameObject.activeSelf == false) 
+                pausePanel.gameObject.SetActive(true);
+
             pausePanel.Show();
         }
 
