@@ -2,6 +2,7 @@ using UnityEngine;
 using ColorChain.Core;
 using UnityEngine.UI;
 using DG.Tweening;
+using System;
 
 namespace ColorChain.UI
 {
@@ -17,7 +18,7 @@ namespace ColorChain.UI
         [SerializeField] private RectTransform bottomBar;
 
         [Header("Buttons")]
-        [SerializeField] private Button pauseButton;
+        [SerializeField] private AnimatedToggle pauseToggle;
 
         [Header("Animation Settings")]
         [SerializeField] private float transitionDuration = 0.3f;
@@ -83,8 +84,8 @@ namespace ColorChain.UI
             if (powerUpPanel != null)
                 powerUpPanel.Initialize();
 
-            if (pauseButton != null)
-                pauseButton.onClick.AddListener(OnPauseGameClicked);
+            if (pauseToggle != null)
+                pauseToggle.onValueChanged.AddListener(OnPauseGameClicked);
         }
 
         private void OnDestroy()
@@ -98,8 +99,8 @@ namespace ColorChain.UI
             if (powerUpPanel != null)
                 powerUpPanel.Cleanup();
 
-            if (pauseButton != null)
-                pauseButton.onClick.RemoveListener(OnPauseGameClicked);
+            if (pauseToggle != null)
+                pauseToggle.onValueChanged.RemoveListener(OnPauseGameClicked);
 
             topBarSequence?.Kill();
             bottomBarSequence?.Kill();
@@ -117,8 +118,8 @@ namespace ColorChain.UI
             if (timerPanel != null) timerPanel.Show();
             if (powerUpPanel != null) powerUpPanel.Show();
 
-            if (pauseButton != null)
-                pauseButton.gameObject.SetActive(true);
+            if (pauseToggle != null)
+                pauseToggle.gameObject.SetActive(true);
 
             ShowBars();
         }
@@ -134,8 +135,8 @@ namespace ColorChain.UI
             if (timerPanel != null) timerPanel.Hide();
             if (powerUpPanel != null) powerUpPanel.Hide();
 
-            if (pauseButton != null)
-                pauseButton.gameObject.SetActive(false);
+            if (pauseToggle != null)
+                pauseToggle.gameObject.SetActive(false);
         }
 
         private void ShowBars()
@@ -176,13 +177,13 @@ namespace ColorChain.UI
             }
         }
 
-        private void OnPauseGameClicked()
+        private void OnPauseGameClicked(bool isOn)
         {
-            if (GameStateManager.CurrentState == GameState.Playing)
+            if (GameStateManager.CurrentState == GameState.Playing && isOn)
             {
                 GameStateManager.PauseGame();
             }
-            else if (GameStateManager.CurrentState == GameState.Paused)
+            else if (GameStateManager.CurrentState == GameState.Paused && !isOn)
             {
                 GameStateManager.ResumeGame();
             }

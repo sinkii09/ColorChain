@@ -1,0 +1,345 @@
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using DG.Tweening;
+using System;
+
+namespace ColorChain.UI
+{
+    /// <summary>
+    /// Animated button component that extends Unity Selectable with DOTween animations
+    /// Properly handles all UI states including keyboard/controller navigation
+    /// </summary>
+    public class AnimatedButton : Selectable, IPointerClickHandler
+    {
+        [Header("Animation Type")]
+        [SerializeField] private AnimationType animationType = AnimationType.Scale;
+
+        [Header("Scale Animation")]
+        [SerializeField] private float hoverScale = 1.1f;
+        [SerializeField] private float pressScale = 0.9f;
+        [SerializeField] private float scaleDuration = 0.2f;
+        [SerializeField] private Ease scaleEase = Ease.OutBack;
+
+        [Header("Punch Animation")]
+        [SerializeField] private float punchScale = 0.2f;
+        [SerializeField] private float punchDuration = 0.3f;
+        [SerializeField] private int punchVibrato = 10;
+        [SerializeField] private float punchElasticity = 1f;
+
+        [Header("Rotation Animation")]
+        [SerializeField] private float hoverRotation = 5f;
+        [SerializeField] private float pressRotation = -5f;
+        [SerializeField] private float rotationDuration = 0.2f;
+        [SerializeField] private Ease rotationEase = Ease.OutQuad;
+
+        [Header("Color Animation")]
+        [SerializeField] private bool useColorAnimation = true;
+        [SerializeField] private Color hoverColor = new Color(1f, 1f, 1f, 1f);
+        [SerializeField] private Color pressColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+        [SerializeField] private Color disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+        [SerializeField] private float colorDuration = 0.15f;
+
+        [Header("Sound (Optional)")]
+        [SerializeField] private AudioClip hoverSound;
+        [SerializeField] private AudioClip clickSound;
+
+        [Header("Events")]
+        public UnityEngine.Events.UnityEvent onClick;
+
+        public enum AnimationType
+        {
+            Scale,
+            Punch,
+            Rotation,
+            Color,
+            ScaleAndColor,
+            All
+        }
+
+        private Vector3 originalScale;
+        private Quaternion originalRotation;
+        private Color originalColor;
+        private AudioSource audioSource;
+
+        private Tween scaleTween;
+        private Tween rotationTween;
+        private Tween colorTween;
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            originalScale = transform.localScale;
+            originalRotation = transform.localRotation;
+
+            // Use inherited targetGraphic or find one
+            if (targetGraphic == null)
+            {
+                targetGraphic = GetComponent<Graphic>();
+            }
+            if (targetGraphic == null)
+            {
+                targetGraphic = GetComponentInChildren<Graphic>();
+            }
+
+            if (targetGraphic != null)
+                originalColor = targetGraphic.color;
+
+            // Disable Unity's built-in transitions
+            transition = Transition.None;
+
+            // Setup audio source if sounds are assigned
+            if (hoverSound != null || clickSound != null)
+            {
+                audioSource = gameObject.GetComponent<AudioSource>();
+                if (audioSource == null)
+                {
+                    audioSource = gameObject.AddComponent<AudioSource>();
+                }
+                audioSource.playOnAwake = false;
+            }
+        }
+
+        protected override void DoStateTransition(SelectionState state, bool instant)
+        {
+            base.DoStateTransition(state, instant);
+
+            if (!gameObject.activeInHierarchy)
+                return;
+
+            switch (state)
+            {
+                case SelectionState.Normal:
+                    TransitionToNormal(instant);
+                    break;
+
+                case SelectionState.Highlighted:
+                    TransitionToHighlighted(instant);
+                    PlaySound(hoverSound);
+                    break;
+
+                case SelectionState.Pressed:
+                    TransitionToPressed(instant);
+                    break;
+
+                case SelectionState.Selected:
+                    TransitionToHighlighted(instant);
+                    break;
+
+                case SelectionState.Disabled:
+                    TransitionToDisabled(instant);
+                    break;
+            }
+        }
+
+        private void TransitionToNormal(bool instant)
+        {
+            KillAllTweens();
+
+            if (instant)
+            {
+                transform.localScale = originalScale;
+                transform.localRotation = originalRotation;
+                if (targetGraphic != null && useColorAnimation)
+                    targetGraphic.color = originalColor;
+            }
+            else
+            {
+                scaleTween = transform.DOScale(originalScale, scaleDuration).SetEase(scaleEase);
+                rotationTween = transform.DOLocalRotate(originalRotation.eulerAngles, rotationDuration).SetEase(rotationEase);
+
+                if (targetGraphic != null && useColorAnimation)
+                {
+                    colorTween = targetGraphic.DOColor(originalColor, colorDuration);
+                }
+            }
+        }
+
+        private void TransitionToHighlighted(bool instant)
+        {
+            KillAllTweens();
+
+            switch (animationType)
+            {
+                case AnimationType.Scale:
+                case AnimationType.ScaleAndColor:
+                case AnimationType.All:
+                    AnimateScale(originalScale * hoverScale, instant);
+                    break;
+
+                case AnimationType.Punch:
+                    if (!instant)
+                        AnimatePunch();
+                    break;
+
+                case AnimationType.Rotation:
+                    AnimateRotation(hoverRotation, instant);
+                    break;
+            }
+
+            if ((animationType == AnimationType.Color ||
+                animationType == AnimationType.ScaleAndColor ||
+                animationType == AnimationType.All) && useColorAnimation)
+            {
+                AnimateColor(hoverColor, instant);
+            }
+
+            if (animationType == AnimationType.All)
+            {
+                AnimateRotation(hoverRotation, instant);
+            }
+        }
+
+        private void TransitionToPressed(bool instant)
+        {
+            KillAllTweens();
+
+            switch (animationType)
+            {
+                case AnimationType.Scale:
+                case AnimationType.ScaleAndColor:
+                case AnimationType.All:
+                    AnimateScale(originalScale * pressScale, instant);
+                    break;
+
+                case AnimationType.Rotation:
+                    AnimateRotation(pressRotation, instant);
+                    break;
+            }
+
+            if ((animationType == AnimationType.Color ||
+                animationType == AnimationType.ScaleAndColor ||
+                animationType == AnimationType.All) && useColorAnimation)
+            {
+                AnimateColor(pressColor, instant);
+            }
+
+            if (animationType == AnimationType.All)
+            {
+                AnimateRotation(pressRotation, instant);
+            }
+        }
+
+        private void TransitionToDisabled(bool instant)
+        {
+            KillAllTweens();
+
+            if (instant)
+            {
+                transform.localScale = originalScale;
+                transform.localRotation = originalRotation;
+                if (targetGraphic != null && useColorAnimation)
+                    targetGraphic.color = disabledColor;
+            }
+            else
+            {
+                scaleTween = transform.DOScale(originalScale, scaleDuration).SetEase(scaleEase);
+                rotationTween = transform.DOLocalRotate(originalRotation.eulerAngles, rotationDuration).SetEase(rotationEase);
+
+                if (targetGraphic != null && useColorAnimation)
+                {
+                    colorTween = targetGraphic.DOColor(disabledColor, colorDuration);
+                }
+            }
+        }
+
+        private void AnimateScale(Vector3 targetScale, bool instant)
+        {
+            if (instant)
+            {
+                transform.localScale = targetScale;
+            }
+            else
+            {
+                scaleTween = transform.DOScale(targetScale, scaleDuration).SetEase(scaleEase);
+            }
+        }
+
+        private void AnimatePunch()
+        {
+            scaleTween = transform.DOPunchScale(Vector3.one * punchScale, punchDuration, punchVibrato, punchElasticity);
+        }
+
+        private void AnimateRotation(float angle, bool instant)
+        {
+            Vector3 targetRotation = originalRotation.eulerAngles + new Vector3(0, 0, angle);
+
+            if (instant)
+            {
+                transform.localRotation = Quaternion.Euler(targetRotation);
+            }
+            else
+            {
+                rotationTween = transform.DOLocalRotate(targetRotation, rotationDuration).SetEase(rotationEase);
+            }
+        }
+
+        private void AnimateColor(Color targetColor, bool instant)
+        {
+            if (targetGraphic == null) return;
+
+            if (instant)
+            {
+                targetGraphic.color = targetColor;
+            }
+            else
+            {
+                colorTween = targetGraphic.DOColor(targetColor, colorDuration);
+            }
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (!IsInteractable())
+                return;
+
+            PlaySound(clickSound);
+            onClick?.Invoke();
+        }
+
+        private void PlaySound(AudioClip clip)
+        {
+            if (audioSource != null && clip != null)
+            {
+                audioSource.PlayOneShot(clip);
+            }
+        }
+
+        private void KillAllTweens()
+        {
+            scaleTween?.Kill();
+            rotationTween?.Kill();
+            colorTween?.Kill();
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+
+            KillAllTweens();
+            transform.localScale = originalScale;
+            transform.localRotation = originalRotation;
+
+            if (targetGraphic != null)
+            {
+                targetGraphic.color = originalColor;
+            }
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            KillAllTweens();
+        }
+
+#if UNITY_EDITOR
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+            // Force transition to None in editor
+            transition = Transition.None;
+        }
+#endif
+    }
+}
