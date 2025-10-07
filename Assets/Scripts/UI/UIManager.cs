@@ -10,8 +10,7 @@ namespace ColorChain.UI
         [SerializeField] private GameplayHUD gameplayHUD;
         [SerializeField] private Menu mainMenu;
         [SerializeField] private PausePanel pausePanel;
-
-        [SerializeField] private GameObject gameOverPanel;
+        [SerializeField] private GameOverPanel gameOverPanel;
 
         private static UIManager instance;
         public static UIManager Instance => instance;
@@ -48,6 +47,7 @@ namespace ColorChain.UI
         private void InitializeUI()
         {
             pausePanel.Initialize();
+            gameOverPanel.Initialize();
             SetPanelActive(gameplayHUD.gameObject, false);
 
             ShowMainMenuState();
@@ -97,6 +97,14 @@ namespace ColorChain.UI
                         yield return new WaitForSeconds(mainMenu.GetTransitionDuration());
                     }
                     break;
+                case GameState.GameOver:
+                    if (gameOverPanel != null)
+                    {
+                        gameOverPanel.Hide();
+                        // Wait for game over panel hide animation
+                        yield return new WaitForSeconds(gameOverPanel.GetTransitionDuration());
+                    }
+                    break;
             }
 
             // Complete the state change
@@ -124,8 +132,6 @@ namespace ColorChain.UI
 
         private void ShowMainMenuState()
         {
-            SetPanelActive(gameOverPanel, false);
-
             if (gameplayHUD != null)
                 gameplayHUD.HideGameplayUI();
 
@@ -135,8 +141,6 @@ namespace ColorChain.UI
 
         private void ShowPlayingState()
         {
-            SetPanelActive(gameOverPanel, false);
-
             if (gameplayHUD != null && gameplayHUD.gameObject.activeSelf == false)
                 SetPanelActive(gameplayHUD.gameObject, true);
 
@@ -155,7 +159,11 @@ namespace ColorChain.UI
 
         private void ShowGameOverState()
         {
-            SetPanelActive(gameOverPanel, true);
+            if (gameOverPanel == null) return;
+            if (gameOverPanel.gameObject.activeSelf == false)
+                gameOverPanel.gameObject.SetActive(true);
+
+            gameOverPanel.Show();
         }
 
         private void SetPanelActive(GameObject panel, bool active)
