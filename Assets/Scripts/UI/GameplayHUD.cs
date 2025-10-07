@@ -54,6 +54,13 @@ namespace ColorChain.UI
         private void Start()
         {
             InitializePanels();
+
+            GameStateManager.OnGameStarted += GameStateManager_OnGameStarted;
+        }
+
+        private void GameStateManager_OnGameStarted()
+        {
+            pauseToggle.IsOn = false;
         }
 
         private void InitializeBarPositions()
@@ -90,6 +97,8 @@ namespace ColorChain.UI
 
         private void OnDestroy()
         {
+            GameStateManager.OnGameStarted -= GameStateManager_OnGameStarted;
+
             if (scorePanel != null)
                 scorePanel.Cleanup();
 

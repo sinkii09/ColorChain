@@ -7,8 +7,8 @@ namespace ColorChain.UI
 {
     public class PausePanel : BaseUIPanel
     {
-        [SerializeField] private Button _quitButton;
-        [SerializeField] private Button _restartButton;
+        [SerializeField] private AnimatedButton _quitButton;
+        [SerializeField] private AnimatedButton _restartButton;
 
         [SerializeField] private RectTransform _containerRect;
 

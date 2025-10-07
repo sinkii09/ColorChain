@@ -271,10 +271,10 @@ namespace ColorChain.GamePlay
             if (tilesByColor == null || tilesByColor.Count < 2)
                 return;
 
-            // Find most common color
-            TileColor mostCommon = tilesByColor.OrderByDescending(x => x.Value).First().Key;
-            // Find second most common color
-            TileColor secondCommon = tilesByColor.OrderByDescending(x => x.Value).Skip(1).First().Key;
+            // Find most common color by count
+            TileColor mostCommon = tilesByColor.OrderByDescending(x => x.Value.Count).First().Key;
+            // Find second most common color by count
+            TileColor secondCommon = tilesByColor.OrderByDescending(x => x.Value.Count).Skip(1).First().Key;
 
             _tileGrid.UpdateTilesColor(tilesByColor[mostCommon], secondCommon);
         }
