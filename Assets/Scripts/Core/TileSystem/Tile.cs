@@ -299,6 +299,25 @@ namespace ColorChain.Core
             noChainSequence.Append(_spriteRenderer.DOColor(originalColor, _animationDuration));
         }
 
+        public void PlayFlashEffect(Color flashColor, float duration)
+        {
+            if (_spriteRenderer == null) return;
+
+            Color originalColor = _spriteRenderer.color;
+
+            _spriteRenderer.DOColor(flashColor, duration * 0.5f)
+                .OnComplete(() => _spriteRenderer.DOColor(originalColor, duration * 0.5f));
+        }
+
+        public void PlayPopEffect(float scaleMultiplier, float duration)
+        {
+            Vector3 originalScale = transform.localScale;
+
+            transform.DOScale(originalScale * scaleMultiplier, duration * 0.5f)
+                .SetEase(Ease.OutQuad)
+                .OnComplete(() => transform.DOScale(originalScale, duration * 0.5f).SetEase(Ease.InQuad));
+        }
+
         #endregion
     }
 }

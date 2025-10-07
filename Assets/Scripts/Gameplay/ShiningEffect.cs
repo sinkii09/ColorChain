@@ -166,6 +166,17 @@ namespace ColorChain.Gameplay
             }
         }
 
+        public void PlayFlash()
+        {
+            if (spriteRenderer == null) return;
+
+            Color originalColor = spriteRenderer.color;
+            Color flashColor = Color.white;
+
+            spriteRenderer.DOColor(flashColor, 0.1f)
+                .OnComplete(() => spriteRenderer.DOColor(originalColor, 0.2f));
+        }
+
         private void OnDestroy()
         {
             Stop();

@@ -1,5 +1,7 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 
 namespace ColorChain.Core
 {
@@ -211,6 +213,38 @@ namespace ColorChain.Core
                 if (tile != null)
                 {
                     tile.SetTileColor(newColor);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates tiles color with animated effects (flash, stagger, pop)
+        /// </summary>
+        public IEnumerator UpdateTilesColorAnimated(HashSet<Tile> tiles, TileColor newColor, float staggerDelay = 0.02f)
+        {
+            // Flash tiles before converting
+            foreach (var tile in tiles)
+            {
+                if (tile != null)
+                {
+                    tile.PlayFlashEffect(Color.white, 0.1f);
+                }
+            }
+
+            yield return new WaitForSeconds(0.15f);
+
+            // Convert colors with stagger effect
+            float delay = 0f;
+            foreach (var tile in tiles)
+            {
+                if (tile != null)
+                {
+                    Tile capturedTile = tile; // Capture for closure
+                    DOVirtual.DelayedCall(delay, () => {
+                        capturedTile.SetTileColor(newColor);
+                        //capturedTile.PlayPopEffect(1.2f, 0.2f);
+                    });
+                    delay += staggerDelay;
                 }
             }
         }

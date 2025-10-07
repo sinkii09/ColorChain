@@ -258,15 +258,9 @@ namespace ColorChain.GamePlay
 
         #endregion
 
-        #region PowerUp Excecution
+        #region PowerUp Execution
         private void ExecuteColorConverter()
         {
-            // 1. Count each color on the board
-            // 2. Find most populous color
-            // 3. Find second most populous color
-            // 4. Convert all tiles of first color to second
-            // 5. Trigger visual effects
-
             Dictionary<TileColor, HashSet<Tile>> tilesByColor = _tileGrid.GetTilesByColor();
             if (tilesByColor == null || tilesByColor.Count < 2)
                 return;
@@ -276,26 +270,55 @@ namespace ColorChain.GamePlay
             // Find second most common color by count
             TileColor secondCommon = tilesByColor.OrderByDescending(x => x.Value.Count).Skip(1).First().Key;
 
-            _tileGrid.UpdateTilesColor(tilesByColor[mostCommon], secondCommon);
+            // Execute with visual effect
+            StartCoroutine(ExecuteColorConverterEffect(tilesByColor[mostCommon], secondCommon));
+        }
+
+        private IEnumerator ExecuteColorConverterEffect(HashSet<Tile> tilesToConvert, TileColor targetColor)
+        {
+            yield return StartCoroutine(_tileGrid.UpdateTilesColorAnimated(tilesToConvert, targetColor));
         }
 
         private void ExecuteTimeBonus()
         {
-            // 1. Call GameStateManager.AddBonusTime(10f)
-            // 2. Show "+10s" floating text
-            // 3. Flash timer UI
-
             GameStateManager.AddBonusTime(_powerUpSystem.TimerBonusAmount);
+
+            // Show visual feedback
+            StartCoroutine(ShowTimeBonusEffect());
+        }
+
+        private IEnumerator ShowTimeBonusEffect()
+        {
+            // Flash background or play particle effect
+            if (_backgroundRenderer != null)
+            {
+                // Flash effect
+                _backgroundRenderer.PlayFlash();
+            }
+
+            // TODO: Show floating text "+10s" at timer position
+            Debug.Log($"+{_powerUpSystem.TimerBonusAmount}s Time Bonus!");
+
+            yield return null;
         }
 
         private void ExecuteScoreMultiplier()
         {
-            // 1. Set isMultiplierActive = true
-            // 2. Set multiplierTimeRemaining = 5f
-            // 3. Start countdown coroutine
-            // 4. Show "2X" indicator on UI
-
             _multiplierTimeRemaining += _powerUpSystem.MultiplierDuration;
+
+            // Show visual feedback
+            StartCoroutine(ShowMultiplierEffect());
+        }
+
+        private IEnumerator ShowMultiplierEffect()
+        {
+            // TODO: Show "2X" or "3X" indicator on screen
+            // TODO: Play particle burst effect
+            // TODO: Change score text color temporarily
+
+            Debug.Log($"{_powerUpSystem.MultiplierAmount}X Multiplier Active for {_powerUpSystem.MultiplierDuration}s!");
+
+            yield return null;
         }
         #endregion
 
