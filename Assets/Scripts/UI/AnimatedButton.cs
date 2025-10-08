@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using DG.Tweening;
 using System;
+using ColorChain.Core;
 
 namespace ColorChain.UI
 {
@@ -41,8 +42,8 @@ namespace ColorChain.UI
         [SerializeField] private float colorDuration = 0.15f;
 
         [Header("Sound (Optional)")]
-        [SerializeField] private AudioClip hoverSound;
-        [SerializeField] private AudioClip clickSound;
+        [SerializeField] private AudioClip customHoverSound;
+        [SerializeField] private AudioClip customClickSound;
 
         [Header("Events")]
         public UnityEngine.Events.UnityEvent onClick;
@@ -60,7 +61,6 @@ namespace ColorChain.UI
         private Vector3 originalScale;
         private Quaternion originalRotation;
         private Color originalColor;
-        private AudioSource audioSource;
 
         private Tween scaleTween;
         private Tween rotationTween;
@@ -88,17 +88,6 @@ namespace ColorChain.UI
 
             // Disable Unity's built-in transitions
             transition = Transition.None;
-
-            // Setup audio source if sounds are assigned
-            if (hoverSound != null || clickSound != null)
-            {
-                audioSource = gameObject.GetComponent<AudioSource>();
-                if (audioSource == null)
-                {
-                    audioSource = gameObject.AddComponent<AudioSource>();
-                }
-                audioSource.playOnAwake = false;
-            }
         }
 
         protected override void DoStateTransition(SelectionState state, bool instant)
@@ -116,7 +105,7 @@ namespace ColorChain.UI
 
                 case SelectionState.Highlighted:
                     TransitionToHighlighted(instant);
-                    PlaySound(hoverSound);
+                    PlayHoverSound();
                     break;
 
                 case SelectionState.Pressed:
@@ -294,15 +283,31 @@ namespace ColorChain.UI
             if (!IsInteractable())
                 return;
 
-            PlaySound(clickSound);
+            PlayClickSound();
             onClick?.Invoke();
         }
 
-        private void PlaySound(AudioClip clip)
+        private void PlayHoverSound()
         {
-            if (audioSource != null && clip != null)
+            if (customHoverSound != null)
             {
-                audioSource.PlayOneShot(clip);
+                AudioManager.PlaySFX(customHoverSound);
+            }
+            else
+            {
+                AudioManager.PlayButtonHover();
+            }
+        }
+
+        private void PlayClickSound()
+        {
+            if (customClickSound != null)
+            {
+                AudioManager.PlaySFX(customClickSound);
+            }
+            else
+            {
+                AudioManager.PlayButtonClick();
             }
         }
 

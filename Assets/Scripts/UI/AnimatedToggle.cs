@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using DG.Tweening;
+using ColorChain.Core;
 
 namespace ColorChain.UI
 {
@@ -35,6 +36,9 @@ namespace ColorChain.UI
 
         [Header("Fade Animation")]
         [SerializeField] private float fadeOutAlpha = 0f;
+
+        [Header("Sound (Optional)")]
+        [SerializeField] private AudioClip customToggleSound;
 
         [Header("Events")]
         public UnityEvent<bool> onValueChanged;
@@ -90,7 +94,20 @@ namespace ColorChain.UI
             if (!IsInteractable() || isAnimating)
                 return;
 
+            PlayToggleSound();
             Toggle();
+        }
+
+        private void PlayToggleSound()
+        {
+            if (customToggleSound != null)
+            {
+                AudioManager.PlaySFX(customToggleSound);
+            }
+            else
+            {
+                AudioManager.PlayButtonClick();
+            }
         }
 
         public void Toggle()

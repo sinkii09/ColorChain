@@ -5,11 +5,16 @@ namespace ColorChain.Core
     [CreateAssetMenu(fileName = "AudioConfig", menuName = "Color Chain/Audio Config")]
     public class AudioConfig : ScriptableObject
     {
-        [Header("SFX Clips")]
+        [Header("Gameplay SFX")]
         public AudioClip tileClickSound;
         public AudioClip chainReactionSound;
         public AudioClip powerUpSound;
+
+        [Header("UI SFX")]
+        public AudioClip panelShowSound;
+        public AudioClip panelHideSound;
         public AudioClip buttonClickSound;
+        public AudioClip buttonHoverSound;
 
         [Header("Music")]
         public AudioClip menuMusic;

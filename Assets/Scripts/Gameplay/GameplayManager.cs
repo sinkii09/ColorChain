@@ -216,6 +216,7 @@ namespace ColorChain.GamePlay
                 case GameState.MainMenu:
                     _tileGrid.gameObject.SetActive(false);
                     _backgroundRenderer.Play();
+                    AudioManager.PlayMenuMusic();
                     break;
                 case GameState.GameOver:
                 case GameState.Paused:

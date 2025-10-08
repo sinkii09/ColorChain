@@ -1,9 +1,14 @@
 using UnityEngine;
+using ColorChain.Core;
 
 namespace ColorChain.UI
 {
     public abstract class BaseUIPanel : MonoBehaviour
     {
+        [Header("Audio (Optional)")]
+        [SerializeField] protected AudioClip customShowSound;
+        [SerializeField] protected AudioClip customHideSound;
+
         protected bool isInitialized = false;
         protected bool isActive = false;
         public virtual void Initialize()
@@ -45,6 +50,17 @@ namespace ColorChain.UI
 
             if (isActive) return;
             isActive = true;
+
+            // Play sound - custom if assigned, otherwise default
+            if (customShowSound != null)
+            {
+                AudioManager.PlaySFX(customShowSound);
+            }
+            else
+            {
+                AudioManager.PlayPanelShow();
+            }
+
             OnShow();
         }
 
@@ -52,6 +68,17 @@ namespace ColorChain.UI
         {
             if (!isActive) return;
             isActive = false;
+
+            // Play sound - custom if assigned, otherwise default
+            if (customHideSound != null)
+            {
+                AudioManager.PlaySFX(customHideSound);
+            }
+            else
+            {
+                AudioManager.PlayPanelHide();
+            }
+
             OnHide();
         }
 

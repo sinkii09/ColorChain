@@ -175,11 +175,35 @@ namespace ColorChain.Core
             }
         }
 
+        public static void PlayPanelShow()
+        {
+            if (_config != null && _config.panelShowSound != null)
+            {
+                PlaySFX(_config.panelShowSound);
+            }
+        }
+
+        public static void PlayPanelHide()
+        {
+            if (_config != null && _config.panelHideSound != null)
+            {
+                PlaySFX(_config.panelHideSound);
+            }
+        }
+
         public static void PlayButtonClick()
         {
             if (_config != null && _config.buttonClickSound != null)
             {
                 PlaySFX(_config.buttonClickSound);
+            }
+        }
+
+        public static void PlayButtonHover()
+        {
+            if (_config != null && _config.buttonHoverSound != null)
+            {
+                PlaySFX(_config.buttonHoverSound);
             }
         }
 
