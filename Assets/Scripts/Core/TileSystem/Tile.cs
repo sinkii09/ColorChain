@@ -220,18 +220,46 @@ namespace ColorChain.Core
 
         #region Visual Effects
 
-        private void PlayActivationEffect()
+        private void KillAllSequences()
         {
+            // Kill all sequence references
             activationSequence?.Kill();
+            deactivationSequence?.Kill();
+            colorChangeSequence?.Kill();
+            noChainSequence?.Kill();
 
-            transform.localScale = Vector3.one;
-
+            // Kill all tweens on transform and sprite renderer
+            transform.DOKill();
             if (_spriteRenderer != null)
             {
-                Color c = _spriteRenderer.color;
-                c.a = 1f;
-                _spriteRenderer.color = c;
+                _spriteRenderer.DOKill();
             }
+        }
+
+        private void RestoreBaseState()
+        {
+            // Reset transform to defaults
+            transform.localScale = Vector3.one;
+            transform.localRotation = Quaternion.identity;
+            // Note: localPosition is managed by grid system, don't reset it here
+
+            // Reset sprite color to proper tile color
+            if (_tileColorData != null && _spriteRenderer != null)
+            {
+                Color properColor = _tileColorData.GetOverlayColorForColor(_tileColor);
+                properColor.a = 1f;
+                _spriteRenderer.color = properColor;
+            }
+        }
+
+        private void PlayActivationEffect()
+        {
+            // Kill all previous animations and restore clean state
+            KillAllSequences();
+            RestoreBaseState();
+
+            // Capture starting state
+            Color startColor = _spriteRenderer.color;
 
             activationSequence = DOTween.Sequence();
 
@@ -241,10 +269,18 @@ namespace ColorChain.Core
             // Flash effect
             if (_spriteRenderer != null)
             {
-                Color originalColor = _spriteRenderer.color;
                 activationSequence.Join(_spriteRenderer.DOColor(Color.white, _animationDuration / 2));
-                activationSequence.Append(_spriteRenderer.DOColor(originalColor, _animationDuration));
+                activationSequence.Append(_spriteRenderer.DOColor(startColor, _animationDuration));
             }
+
+            // Ensure state is restored if animation is interrupted
+            activationSequence.OnKill(() =>
+            {
+                if (_spriteRenderer != null)
+                {
+                    _spriteRenderer.color = startColor;
+                }
+            });
         }
 
         private void PlayDeactivationEffect(System.Action onComplete = null)
@@ -268,54 +304,85 @@ namespace ColorChain.Core
         {
             if (_spriteRenderer == null) return;
 
-            colorChangeSequence?.Kill();
+            // Kill all previous animations and restore clean state
+            KillAllSequences();
+            RestoreBaseState();
 
             // Quick rotation and scale pulse
             colorChangeSequence = DOTween.Sequence();
             colorChangeSequence.Append(transform.DOPunchRotation(new Vector3(0, 0, 15f), _animationDuration, 5, 0.5f));
             colorChangeSequence.Join(transform.DOPunchScale(Vector3.one * 0.15f, _animationDuration, 3, 0.3f));
+
+            // Ensure state is restored if animation is interrupted
+            colorChangeSequence.OnKill(() =>
+            {
+                transform.localScale = Vector3.one;
+                transform.localRotation = Quaternion.identity;
+            });
         }
 
         public void PlayNoChainEffect()
         {
             if (_spriteRenderer == null) return;
 
-            noChainSequence?.Kill();
+            // Kill all previous animations and restore clean state
+            KillAllSequences();
+            RestoreBaseState();
+
+            // Capture starting state
+            Vector3 startPos = transform.localPosition;
+            Color startColor = _spriteRenderer.color;
 
             // Shake and darken to indicate invalid move
             noChainSequence = DOTween.Sequence();
 
             // Horizontal shake (like saying "no")
-            Vector3 originalPos = transform.localPosition;
             noChainSequence.Append(transform.DOShakePosition(_animationDuration * 1.5f, new Vector3(0.15f, 0, 0), 20, 90, false, true));
-            noChainSequence.OnComplete(() => transform.localPosition = originalPos);
 
             // Darken briefly
-            Color originalColor = _spriteRenderer.color;
-            Color darkenedColor = originalColor * 0.6f;
-            darkenedColor.a = originalColor.a;
+            Color darkenedColor = startColor * 0.6f;
+            darkenedColor.a = startColor.a;
 
             noChainSequence.Join(_spriteRenderer.DOColor(darkenedColor, _animationDuration * 0.5f));
-            noChainSequence.Append(_spriteRenderer.DOColor(originalColor, _animationDuration));
+            noChainSequence.Append(_spriteRenderer.DOColor(startColor, _animationDuration));
+
+            // Ensure state is restored if animation is interrupted
+            noChainSequence.OnKill(() =>
+            {
+                transform.localPosition = startPos;
+                _spriteRenderer.color = startColor;
+            });
         }
 
         public void PlayFlashEffect(Color flashColor, float duration)
         {
             if (_spriteRenderer == null) return;
 
-            Color originalColor = _spriteRenderer.color;
+            // Kill existing tweens on sprite renderer
+            _spriteRenderer.DOKill();
 
+            // Capture current color
+            Color startColor = _spriteRenderer.color;
+
+            // Flash animation
             _spriteRenderer.DOColor(flashColor, duration * 0.5f)
-                .OnComplete(() => _spriteRenderer.DOColor(originalColor, duration * 0.5f));
+                .OnComplete(() => _spriteRenderer.DOColor(startColor, duration * 0.5f))
+                .OnKill(() => _spriteRenderer.color = startColor);
         }
 
         public void PlayPopEffect(float scaleMultiplier, float duration)
         {
-            Vector3 originalScale = transform.localScale;
+            // Kill existing tweens on transform
+            transform.DOKill();
 
-            transform.DOScale(originalScale * scaleMultiplier, duration * 0.5f)
+            // Capture current scale
+            Vector3 startScale = transform.localScale;
+
+            // Pop animation
+            transform.DOScale(startScale * scaleMultiplier, duration * 0.5f)
                 .SetEase(Ease.OutQuad)
-                .OnComplete(() => transform.DOScale(originalScale, duration * 0.5f).SetEase(Ease.InQuad));
+                .OnComplete(() => transform.DOScale(startScale, duration * 0.5f).SetEase(Ease.InQuad))
+                .OnKill(() => transform.localScale = startScale);
         }
 
         #endregion
