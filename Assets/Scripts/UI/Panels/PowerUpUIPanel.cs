@@ -10,9 +10,7 @@ namespace ColorChain.UI
     public class PowerUpUIPanel : BaseUIPanel
     {
         [Header("Power Bar")]
-        [SerializeField] private Slider powerBarSlider;
-        [SerializeField] private Image powerBarFill;
-        [SerializeField] private Image powerBarGlow;
+        [SerializeField] private PowerUpBar powerBar;
 
         [Header("Power-Up Icons")]
         [SerializeField] private Image powerUpIcon;
@@ -25,7 +23,6 @@ namespace ColorChain.UI
         [SerializeField] private Image multiplierTimerFill;
 
         [Header("Visual Settings")]
-        [SerializeField] private Gradient powerBarGradient;
         [SerializeField] private float iconAnimationDuration = 2f;
 
         private PowerUpSystem powerUpSystem;
@@ -35,16 +32,13 @@ namespace ColorChain.UI
 
         protected override void OnInitialize()
         {
-            if (powerBarSlider != null)
+            if (powerBar != null)
             {
-                powerBarSlider.minValue = 0f;
-                powerBarSlider.maxValue = 100f;
-                powerBarSlider.value = 0f;
+                powerBar.OnReset(false);
             }
 
             HidePowerUpIcon();
             HideMultiplierIndicator();
-            UpdatePowerBarVisual(0f);
         }
 
         protected override void SubscribeToEvents()
@@ -79,40 +73,10 @@ namespace ColorChain.UI
 
         private void UpdatePowerBar(float powerValue)
         {
-            if (powerBarSlider != null)
+            if (powerBar != null)
             {
-                powerBarSlider.DOValue(powerValue, 0.3f);
-            }
-
-            UpdatePowerBarVisual(powerValue);
-        }
-
-        private void UpdatePowerBarVisual(float powerValue)
-        {
-            float normalizedValue = powerValue / 100f;
-
-            if (powerBarFill != null && powerBarGradient != null)
-            {
-                powerBarFill.color = powerBarGradient.Evaluate(normalizedValue);
-            }
-
-            if (powerBarGlow != null)
-            {
-                powerBarGlow.gameObject.SetActive(powerValue >= 100f);
-                if (powerValue >= 100f)
-                {
-                    AnimatePowerBarGlow();
-                }
-            }
-        }
-
-        private void AnimatePowerBarGlow()
-        {
-            if (powerBarGlow != null)
-            {
-                powerBarGlow.DOFade(0.3f, 0.5f)
-                    .SetLoops(-1, LoopType.Yoyo)
-                    .SetEase(Ease.InOutSine);
+                float normalizedValue = powerValue / 100f;
+                powerBar.SetProgress(normalizedValue, true);
             }
         }
 
@@ -248,7 +212,6 @@ namespace ColorChain.UI
         protected override void OnCleanup()
         {
             DOTween.Kill(this);
-            DOTween.Kill(powerBarGlow);
             DOTween.Kill(powerUpIcon);
             DOTween.Kill(multiplierActiveIcon?.transform);
         }

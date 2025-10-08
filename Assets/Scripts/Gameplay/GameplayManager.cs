@@ -158,6 +158,8 @@ namespace ColorChain.GamePlay
 
         private void OnTileClicked(Tile clickedTile)
         {
+            AudioManager.PlayTileClick();
+
             if (_chainReaction != null && GameStateManager.IsGameActive)
             {
                 _chainReaction.StartChain(clickedTile);
@@ -167,6 +169,10 @@ namespace ColorChain.GamePlay
         private void OnchainExcecuted(int chainSize)
         {
             if (_powerUpSystem == null) return;
+
+            // Play chain sound with pitch variation based on chain size
+            float pitch = 1f + (chainSize * 0.1f);
+            AudioManager.PlayChainReaction(pitch);
 
             var calculatedSize = Mathf.RoundToInt(GetCurrentMultiplier() * chainSize);
             ScoreManager.AddChainScore(calculatedSize);
@@ -189,6 +195,8 @@ namespace ColorChain.GamePlay
             ScoreManager.ResetCurrentScore();
 
             InitializeGameplay();
+
+            AudioManager.PlayBackgroundMusic();
         }
 
         private void OnGameEnded()
@@ -204,7 +212,7 @@ namespace ColorChain.GamePlay
             }
 
             switch (state)
-            { 
+            {
                 case GameState.MainMenu:
                     _tileGrid.gameObject.SetActive(false);
                     _backgroundRenderer.Play();
@@ -215,12 +223,14 @@ namespace ColorChain.GamePlay
                 case GameState.Playing:
                     _backgroundRenderer.StopRotate();
                     break;
-                    
+
             }
         }
 
         private void OnPowerUp(PowerUpType type)
         {
+            AudioManager.PlayPowerUp();
+
             // Execute the power-up effect based on type
             switch (type)
             {

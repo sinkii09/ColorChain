@@ -120,7 +120,7 @@ namespace ColorChain.UI
         /// <summary>
         /// Reset bar to empty
         /// </summary>
-        public void Reset(bool animate = false)
+        public void OnReset(bool animate = false)
         {
             SetProgress(0f, animate);
         }
