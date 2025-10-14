@@ -41,6 +41,13 @@ namespace ColorChain.UI
         [SerializeField] private Color disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
         [SerializeField] private float colorDuration = 0.15f;
 
+        [Header("Floating Effect")]
+        [SerializeField] private bool enableFloating = false;
+        [SerializeField] private float floatingDistance = 10f;
+        [SerializeField] private float floatingDuration = 1.5f;
+        [SerializeField] private Ease floatingEase = Ease.InOutSine;
+        [SerializeField] private bool floatingUseLocalPosition = true;
+
         [Header("Sound (Optional)")]
         [SerializeField] private AudioClip customHoverSound;
         [SerializeField] private AudioClip customClickSound;
@@ -61,10 +68,12 @@ namespace ColorChain.UI
         private Vector3 originalScale;
         private Quaternion originalRotation;
         private Color originalColor;
+        private Vector3 originalPosition;
 
         private Tween scaleTween;
         private Tween rotationTween;
         private Tween colorTween;
+        private Tween floatingTween;
 
         protected override void Awake()
         {
@@ -72,6 +81,11 @@ namespace ColorChain.UI
 
             originalScale = transform.localScale;
             originalRotation = transform.localRotation;
+
+            if (floatingUseLocalPosition)
+                originalPosition = transform.localPosition;
+            else
+                originalPosition = transform.position;
 
             // Use inherited targetGraphic or find one
             if (targetGraphic == null)
@@ -88,6 +102,16 @@ namespace ColorChain.UI
 
             // Disable Unity's built-in transitions
             transition = Transition.None;
+        }
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            if (enableFloating)
+            {
+                StartFloating();
+            }
         }
 
         protected override void DoStateTransition(SelectionState state, bool instant)
@@ -311,11 +335,54 @@ namespace ColorChain.UI
             }
         }
 
+        private void StartFloating()
+        {
+            if (!gameObject.activeInHierarchy) return;
+
+            floatingTween?.Kill();
+
+            Vector3 targetPos = originalPosition + new Vector3(0, floatingDistance, 0);
+
+            if (floatingUseLocalPosition)
+            {
+                floatingTween = transform.DOLocalMoveY(targetPos.y, floatingDuration)
+                    .SetEase(floatingEase)
+                    .SetLoops(-1, LoopType.Yoyo);
+            }
+            else
+            {
+                floatingTween = transform.DOMoveY(targetPos.y, floatingDuration)
+                    .SetEase(floatingEase)
+                    .SetLoops(-1, LoopType.Yoyo);
+            }
+        }
+
+        private void StopFloating()
+        {
+            floatingTween?.Kill();
+
+            if (floatingUseLocalPosition)
+                transform.localPosition = originalPosition;
+            else
+                transform.position = originalPosition;
+        }
+
+        public void SetFloating(bool enabled)
+        {
+            enableFloating = enabled;
+
+            if (enabled && gameObject.activeInHierarchy)
+                StartFloating();
+            else
+                StopFloating();
+        }
+
         private void KillAllTweens()
         {
             scaleTween?.Kill();
             rotationTween?.Kill();
             colorTween?.Kill();
+            floatingTween?.Kill();
         }
 
         protected override void OnDisable()
@@ -325,6 +392,11 @@ namespace ColorChain.UI
             KillAllTweens();
             transform.localScale = originalScale;
             transform.localRotation = originalRotation;
+
+            if (floatingUseLocalPosition)
+                transform.localPosition = originalPosition;
+            else
+                transform.position = originalPosition;
 
             if (targetGraphic != null)
             {

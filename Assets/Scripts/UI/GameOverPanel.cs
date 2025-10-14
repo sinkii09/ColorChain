@@ -104,7 +104,7 @@ namespace ColorChain.UI
                 _scoreCountTween?.Kill();
                 _scoreCountTween = DOTween.To(
                     () => 0,
-                    x => _scoreText.text = $"Score: {x}",
+                    x => _scoreText.text = x.ToString(),
                     ScoreManager.CurrentScore,
                     _scoreCountDuration
                 ).SetEase(Ease.OutQuad);
