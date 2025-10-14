@@ -12,6 +12,9 @@ namespace ColorChain.UI
         [Header("Power Bar")]
         [SerializeField] private PowerUpBar powerBar;
 
+        [Header("Particle Effects")]
+        [SerializeField] private ParticleSystem powerBarFullParticles;
+
         [Header("Power-Up Icons")]
         [SerializeField] private Image powerUpIcon;
         [SerializeField] private Sprite colorConverterIcon;
@@ -29,6 +32,7 @@ namespace ColorChain.UI
         private float multiplierDuration = 0f;
         private float multiplierTimer = 0f;
         private bool isMultiplierActive = false;
+        private bool isPlayingParticles = false;
 
         protected override void OnInitialize()
         {
@@ -48,6 +52,11 @@ namespace ColorChain.UI
                 powerUpSystem = GameplayManager.Instance.PowerUpSystem;
                 powerUpSystem.OnPowerUp += OnPowerUpActivated;
             }
+
+            if (powerBar != null)
+            {
+                powerBar.OnBarFullReached += OnPowerBarFull;
+            }
         }
 
         protected override void UnsubscribeFromEvents()
@@ -56,11 +65,16 @@ namespace ColorChain.UI
             {
                 powerUpSystem.OnPowerUp -= OnPowerUpActivated;
             }
+
+            if (powerBar != null)
+            {
+                powerBar.OnBarFullReached -= OnPowerBarFull;
+            }
         }
 
         private void Update()
         {
-            if (powerUpSystem != null)
+            if (powerUpSystem != null && !isPlayingParticles)
             {
                 UpdatePowerBar(powerUpSystem.CurrentPowerBar);
             }
@@ -89,6 +103,7 @@ namespace ColorChain.UI
                 StartMultiplierEffect();
             }
 
+            // Reset internal value immediately to prevent duplicate triggers
             if (powerUpSystem != null)
             {
                 powerUpSystem.ResetPowerBar();
@@ -207,6 +222,63 @@ namespace ColorChain.UI
             {
                 multiplierTimerFill.gameObject.SetActive(false);
             }
+        }
+
+        private void OnPowerBarFull()
+        {
+            SpawnParticleBurst();
+        }
+
+        private void SpawnParticleBurst()
+        {
+            if (powerBarFullParticles == null || powerBar == null) return;
+
+            // Set flag to pause bar updates during particle effect
+            isPlayingParticles = true;
+
+            // Instantiate particle system
+            ParticleSystem particleInstance = Instantiate(powerBarFullParticles);
+
+            // Parent to the same canvas as power bar (important for UI space)
+            Canvas parentCanvas = powerBar.GetComponentInParent<Canvas>();
+            if (parentCanvas != null)
+            {
+                particleInstance.transform.SetParent(parentCanvas.transform, false);
+            }
+            else
+            {
+                particleInstance.transform.SetParent(powerBar.transform.parent, false);
+            }
+
+            // Position at power bar using RectTransform (for UI elements)
+            RectTransform particleRect = particleInstance.GetComponent<RectTransform>();
+            RectTransform barRect = powerBar.GetComponent<RectTransform>();
+
+            if (particleRect != null && barRect != null)
+            {
+                // Copy position from bar
+                particleRect.anchoredPosition = barRect.anchoredPosition;
+                particleRect.anchorMin = barRect.anchorMin;
+                particleRect.anchorMax = barRect.anchorMax;
+                particleRect.sizeDelta = barRect.sizeDelta;
+            }
+            else
+            {
+                // Fallback: use world position
+                particleInstance.transform.position = powerBar.transform.position;
+            }
+
+            // Play particles
+            particleInstance.Play();
+
+            // Auto-destroy after main duration finishes
+            float duration = particleInstance.main.duration + particleInstance.main.startLifetime.constantMax;
+            Destroy(particleInstance.gameObject, duration);
+
+            // Resume bar updates after particle effect completes
+            DOTween.Sequence()
+                .AppendInterval(duration)
+                .OnComplete(() => isPlayingParticles = false);
         }
 
         protected override void OnCleanup()

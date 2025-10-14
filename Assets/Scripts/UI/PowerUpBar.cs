@@ -1,6 +1,8 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using ColorChain.Core;
 
 namespace ColorChain.UI
 {
@@ -23,7 +25,7 @@ namespace ColorChain.UI
 
         [Header("Animation Settings")]
         [SerializeField] private float fillDuration = 0.3f;
-        [SerializeField] private Ease fillEase = Ease.OutQuad;
+        [SerializeField] private Ease fillEase = Ease.Linear;
         [SerializeField] private bool animateOnFill = true;
 
         [Header("Full Animation")]
@@ -40,6 +42,9 @@ namespace ColorChain.UI
         private Tween pulseTween;
         private Tween glowTween;
         private Vector3 originalScale;
+
+        // Event fired when bar reaches full
+        public event Action OnBarFullReached;
 
         private void Awake()
         {
@@ -169,6 +174,12 @@ namespace ColorChain.UI
             {
                 PlayGlowAnimation();
             }
+
+            // Play sound effect
+            AudioManager.PlayPowerUp();
+
+            // Fire event for external listeners (particles, etc.)
+            OnBarFullReached?.Invoke();
         }
 
         private void PlayPulseAnimation()

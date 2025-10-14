@@ -817,6 +817,7 @@ MonoBehaviour:
   customShowSound: {fileID: 0}
   customHideSound: {fileID: 0}
   powerBar: {fileID: 666785136}
+  powerBarFullParticles: {fileID: 122878159655869546, guid: 5050baa5282d8e84d89458ca4c2c1368, type: 3}
   powerUpIcon: {fileID: 0}
   colorConverterIcon: {fileID: 0}
   timeBonusIcon: {fileID: 0}

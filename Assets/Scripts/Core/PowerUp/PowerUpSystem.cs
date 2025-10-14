@@ -90,7 +90,7 @@ namespace ColorChain.Core
 
         public void ResetPowerBar()
         {
-            _currentPowerBar -= MAX_POWER_BAR;
+            _currentPowerBar = Mathf.Max(0, _currentPowerBar - MAX_POWER_BAR);
         }
         #endregion
     }
